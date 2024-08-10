@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">MusicApplicationintow</string>
+    <string name="facebook_app_id">2181289858897376</string>
+    <string name="facebook_client_token">90fc063f423ffa16a2b3f393aa97d49d</string>
 </resources>
