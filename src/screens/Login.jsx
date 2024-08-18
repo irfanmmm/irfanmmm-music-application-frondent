@@ -7,13 +7,22 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, {useEffect} from 'react';
-import {GoogleSignin} from '@react-native-google-signin/google-signin';
-import {AccessToken, LoginButton, Profile} from 'react-native-fbsdk-next';
-import {responsiveui} from '../config/width_hight_config';
-import {color} from '../config/style';
+import React, { useEffect } from 'react';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { AccessToken, LoginButton, Profile } from 'react-native-fbsdk-next';
+import { responsiveui } from '../config/width_hight_config';
+import { color } from '../config/style';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useApiCalls } from '../config/useApiCalls';
+import { useDispatch } from 'react-redux';
+import { userIsLogin } from '../config/redux/reducer';
 
-const Login = ({navigation}) => {
+const Login = ({ navigation }) => {
+  const dispatch = useDispatch()
+  const { signup, error } = useApiCalls()
+
+
+
   useEffect(() => {
     GoogleSignin.configure({
       webClientId:
@@ -24,30 +33,34 @@ const Login = ({navigation}) => {
     try {
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
-      console.log(userInfo);
+
+      let email = userInfo.user.email;
+      let name = userInfo.user.name;
+      let photo = userInfo.user.photo;
+
+      const respose = await signup(email, name, photo)
+
+      await AsyncStorage.setItem('user-data', JSON.stringify(respose.data))
+      dispatch(userIsLogin(true))
       navigation.navigate('Tabs');
     } catch (error) {
-      console.log(error);
     }
   };
 
   const handleLoginFaceBook = (error, result) => {
-    console.log(result, error);
 
     if (error) {
-      console.log('login has error: ' + result.error);
     } else if (result.isCancelled) {
-      console.log('login is cancelled.');
     } else {
-      AccessToken.getCurrentAccessToken().then(data => {
-        console.log(data.accessToken.toString());
+      AccessToken.getCurrentAccessToken().then(async data => {
+        await AsyncStorage.setItem('user-data', JSON.stringify(data))
+        dispatch(userIsLogin(true))
         navigation.navigate('Tabs');
       });
       const currentProfile = Profile.getCurrentProfile().then(function (
         currentProfile,
       ) {
         if (currentProfile) {
-          console.log(currentProfile);
         }
       });
     }

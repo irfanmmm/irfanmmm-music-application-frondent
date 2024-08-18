@@ -2,94 +2,110 @@ import {
   FlatList,
   Image,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
-  TextInput,
+  Animated,
   View,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Feather';
-import React from 'react';
-import {useSafeArea} from 'react-native-safe-area-context';
-import {hp, responsiveui} from '../config/width_hight_config';
-import {color} from '../config/style';
+import React, { useEffect, useState } from 'react';
+import { useSafeArea } from 'react-native-safe-area-context';
+import { hp, responsiveui, wp } from '../config/width_hight_config';
+import { color } from '../config/style';
+import { HomeCard } from '../components/HomeCard';
+import { HomeHoriZontalCard } from '../components/HomeHoriZontalCard';
+import { useApiCalls } from '../config/useApiCalls';
+import { setProfile } from '../config/redux/reducer';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 
-const Home = props => {
+const Home = () => {
+  const dispatch = useDispatch()
   const insets = useSafeArea();
+  const { getProfileDetails, loading, getAllsongs, recentsongs } = useApiCalls()
+
+  const state = useSelector(state => ({
+    profileDetails: state.store.profiledetails
+  }), shallowEqual)
+
+  const scrollY = new Animated.Value(0)
+  const diffClamp = Animated.diffClamp(scrollY, 0, hp(15))
+  const translateY = diffClamp.interpolate({
+    inputRange: [0, hp(15)],
+    outputRange: [0, -hp(15)]
+  })
+
+  const [songsDetails, setSongDetails] = useState([])
+  const [rececntSongs, setRececntSongs] = useState([])
+
+
+
+  useEffect(() => {
+    (async () => {
+      const response = await getProfileDetails();
+      dispatch(setProfile(response));
+
+      const reponse = await getAllsongs();
+      setSongDetails(reponse.data);
+
+      const recent = await recentsongs();
+      if (recent.status) {
+        console.log(recent?.data, 'sahjhjashs');
+
+        setRececntSongs(recent?.data);
+      }
+    })()
+  }, [])
+
   return (
-    <ScrollView
-      style={[styles.safeArea, {paddingTop: insets.top + hp(2)}]}
-      showsVerticalScrollIndicator={false}>
-      <View
-        onStartShouldSetResponder={e => {
-          props?.route?.params.showTabBar
-            ? props?.route?.params?.handleTabPress(true)
-            : props?.route?.params?.handleTabPress(false);
-        }}>
-        <View style={styles.hedder}>
-          <Image
-            resizeMode={'cover'}
-            source={require('../img/person.jpg')}
-            style={styles.profid}
-          />
-          <View style={styles.hedder_center}>
-            <Text style={styles.name_person}>Sarwar Jahan</Text>
-            <Text style={styles.hedder_discription}>Gold Member</Text>
-          </View>
-          <Image source={require('../img/bell.png')} />
+    <View style={styles.safeArea}>
+      <Animated.View style={[styles.hedder,
+      {
+        paddingTop: insets.top === 0 ? hp(5) :
+          insets.top + hp(2), transform: [{ translateY: translateY }]
+      }]}>
+        <Image
+          resizeMode={'cover'}
+          source={state.profileDetails?.profile ? { uri: state.profileDetails?.profile } : require('../img/person.jpg')}
+          style={styles.profid}
+        />
+        <View style={styles.hedder_center}>
+          <Text style={styles.name_person}>{state.profileDetails?.username ? state.profileDetails.username : 'Sarwar Jahan'}</Text>
+          <Text style={styles.hedder_discription}>Gold Member</Text>
         </View>
+        <Image source={require('../img/bell.png')} />
+      </Animated.View>
+      <ScrollView
+
+        showsVerticalScrollIndicator={false}
+        onScroll={({ nativeEvent: { contentOffset: { y } } }) => scrollY.setValue(y)}>
         <View style={styles.search_container}>
           <Text style={styles.search_hedding}>
             {'Listen The\nLatest Musics'}
           </Text>
           <View style={styles.search_box_container}>
-            <Icon name={'search'} size={responsiveui(0.055)} color={'grey'} />
-            {/* <TextInput
-          keyboardType='email-address'
-            style={styles.search_box}
-            placeholderTextColor={'grey'}
-            placeholder="Search Music"
-          /> */}
+            <Image style={styles.search_icon} source={require('../img/search-icon-grey.png')} />
           </View>
         </View>
-        <Text style={styles.hedding_2}>Recently Played</Text>
-        <View style={{height: responsiveui(0.4)}}>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{paddingLeft: responsiveui(0.05)}} // Optional, for some padding on the sides
-            // style={{flex:1}}
-            data={[1, 2, 3, 4]}
-            keyExtractor={item => item.toString()}
-            renderItem={() => (
-              <View style={styles.recentlyplayd_card_parent}>
-                <Image
-                  resizeMode="cover"
-                  style={styles.recentlyplayd_card_image}
-                  source={require('../img/Rectangle.png')}
-                />
-                <Text style={styles.recentlyplayd_card_text}>The traingle</Text>
-              </View>
-            )}
-          />
-        </View>
-        <Text style={styles.hedding_3}>Recommended for you</Text>
-        {Array.from({length: 6}).map((_, i) => (
-          <View style={styles.recomonded_card_parent} key={i}>
-            <Image
-              resizeMode="cover"
-              style={styles.recomonded_card_image}
-              source={require('../img/Rectangle.png')}
+        {rececntSongs.length > 0 && <>
+          <Text style={styles.hedding_2}>Recently Played</Text>
+          <View style={{ height: responsiveui(0.4) }}>
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingLeft: responsiveui(0.05) }} // Optional, for some padding on the sides
+              data={rececntSongs}
+              keyExtractor={(item, index) => index.toString()}
+              renderItem={({ item, index }) => (
+                <HomeHoriZontalCard item={item} index={index} />
+              )}
             />
-            <View style={styles.recomonded_card_right}>
-              <Text style={styles.recomonded_card_text}>Take care of you</Text>
-              <Text style={styles.recomonded_card_text2}>Admin Thembi</Text>
-              <Text style={styles.recomonded_card_text2}>114k/steams</Text>
-            </View>
           </View>
-        ))}
-      </View>
-    </ScrollView>
+          <Text style={styles.hedding_3}>Recommended for you</Text>
+        </>}
+        {songsDetails.map((item, i) => {
+          return <HomeCard key={i} item={item} index={i} />
+        })}
+      </ScrollView>
+    </View>
   );
 };
 
@@ -100,13 +116,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: color.bagroundcolor,
     overflowy: 'scroll',
+    position: 'relative',
+    paddingBottom: hp(4.5) + wp(4)
   },
   hedder: {
+    position: 'absolute',
+    elevation: 4,
+    height: hp(15),
+    top: 0,
+    left: 0,
+    zIndex: 50,
+    right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-
     paddingHorizontal: responsiveui(0.05),
+    backgroundColor: color.bagroundcolor,
+  },
+  recomonded_card_parent: {
+    paddingLeft: responsiveui(0.05),
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: wp(4),
   },
   profid: {
     width: responsiveui(0.12),
@@ -129,10 +160,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito-Regular',
   },
   search_container: {
-    marginTop: responsiveui(0.055),
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: responsiveui(0.05),
+    marginTop: hp(15),
+    marginBottom: wp(7.5),
   },
   search_hedding: {
     color: color.textWhite,
@@ -144,66 +176,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  search_icon: {
+    width: wp(8),
+    height: wp(8),
+  },
   search_box: {
     marginLeft: responsiveui(0.055),
-    fontSize: responsiveui(0.045),
+    fontSize: wp(6),
   },
   hedding_2: {
     color: color.textWhite,
-    marginTop: responsiveui(0.1),
-    marginBottom: responsiveui(0.05),
+
+    marginBottom: wp(4),
     paddingLeft: responsiveui(0.05),
     color: color.textWhite,
-    fontSize: responsiveui(0.065),
+    fontSize: wp(6),
     fontFamily: 'Nunito-SemiBold',
-  },
-  recentlyplayd_card_parent: {
-    width: responsiveui(0.33),
-    height: responsiveui(0.3),
-    marginRight: responsiveui(0.05),
-  },
-  recentlyplayd_card_image: {
-    width: '100%',
-    height: '100%',
-    borderRadius: responsiveui(0.05),
-  },
-  recentlyplayd_card_text: {
-    fontSize: responsiveui(0.05),
-    color: color.textWhite,
-    textAlign: 'center',
-    marginTop: responsiveui(0.02),
-    fontFamily: 'Nunito-Regular',
   },
   hedding_3: {
-    marginTop: responsiveui(0.04),
-    marginBottom: responsiveui(0.05),
+    marginTop: wp(2.5),
+    marginBottom: wp(4),
     paddingLeft: responsiveui(0.05),
     color: color.textWhite,
-    fontSize: responsiveui(0.065),
+    fontSize: wp(6),
     fontFamily: 'Nunito-SemiBold',
-  },
-  recomonded_card_parent: {
-    paddingLeft: responsiveui(0.05),
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: responsiveui(0.04),
-  },
-  recomonded_card_image: {
-    width: responsiveui(0.28),
-    height: responsiveui(0.28),
-    marginRight: responsiveui(0.04),
-    borderRadius: responsiveui(0.025),
-  },
-  recomonded_card_right: {},
-  recomonded_card_text: {
-    color: color.textWhite,
-    fontSize: responsiveui(0.05),
-    fontFamily: 'Nunito-Regular',
-  },
-  recomonded_card_text2: {
-    color: color.textgrey,
-    fontFamily: 'Nunito-Regular',
-    fontSize: responsiveui(0.04),
-    marginTop: responsiveui(0.01),
   },
 });

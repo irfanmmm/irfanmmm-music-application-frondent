@@ -1,70 +1,113 @@
 import {
   FlatList,
   Image,
+  Pressable,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import React from 'react';
-import {useSafeArea} from 'react-native-safe-area-context';
-import {color} from '../config/style';
-import {hp, responsiveui} from '../config/width_hight_config';
+import React, { useEffect, useState } from 'react';
+import { useSafeArea } from 'react-native-safe-area-context';
+import { color } from '../config/style';
+import { hp, responsiveui, wp } from '../config/width_hight_config';
+import Animated, { FadeInDown, FadeInLeft, SlideInLeft, SlideInRight, SlideOutLeft, SlideOutRight } from 'react-native-reanimated';
+import { setCurrentTab } from '../config/redux/reducer';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useApiCalls } from '../config/useApiCalls';
 
-const Favorate = props => {
+const Favorate = ({ navigation }) => {
   const insets = useSafeArea();
+
+  const { loading, getAllsongs, likedSongs } = useApiCalls()
+  const { profileDetails } = useSelector(state => ({
+    profileDetails: state.store.profiledetails
+  }), shallowEqual)
+
+  const [favorateList, setFavorateList] = useState([])
+  const [allsongs, setAllsongs] = useState([])
+
+  useEffect(() => {
+
+    (
+      async () => {
+
+        const response = await likedSongs()
+        if (!response.status) {
+          const response = await getAllsongs()
+          setAllsongs(response?.data)
+        } else {
+          setFavorateList(response.data)
+
+        }
+
+      }
+    )()
+
+
+  }, [])
+
+
+
+
+  const data = [
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+  ]
+
 
   return (
     <ScrollView
-      style={[styles.safeArea, {paddingTop: insets.top + hp(2)}]}
+      style={[styles.safeArea, { paddingTop: insets.top === 0 ? hp(5) : insets.top + hp(2) }]}
       showsVerticalScrollIndicator={false}>
-      <View
-        onStartShouldSetResponder={e => {
-          props?.route?.params.showTabBar
-            ? props?.route?.params?.handleTabPress(true)
-            : props?.route?.params?.handleTabPress(false);
-        }}>
-        <View style={styles.hedder}>
+      <Animated.View
+        entering={SlideInLeft} exiting={SlideOutRight}
+      >
+        <Pressable
+          onPress={() => navigation.navigate('Home')}
+          style={styles.hedder}>
           <Image source={require('../img/arrow-left.png')} />
-        </View>
-        <View style={styles.personal_container}>
+        </Pressable>
+        <Animated.View
+          entering={FadeInLeft.delay(200)}
+          style={styles.personal_container}>
           <Image
-            resizeMode="cover"
+            resizeMode="stretch"
             style={styles.dp_image}
-            source={require('../img/Rectangle.png')}
+            source={profileDetails?.profile ? { uri: profileDetails?.profile } : require('../img/Rectangle.png')}
           />
           <View style={styles.personal_right_contaienr}>
-            <Text style={styles.usernaem}>Sarwar Jahan</Text>
-            <Text style={styles.email}>sarwarmusic@gmail.com</Text>
+            <Text style={styles.usernaem}>{profileDetails?.username}</Text>
+            <Text style={styles.email}>{profileDetails?.email}</Text>
             <Text style={styles.membership}>Gold Member</Text>
             <Text style={styles.discription}>
               Love Music and I am not an Musician.
             </Text>
           </View>
-        </View>
-        <Text style={styles.sub_hedding}>Favorate Album</Text>
+        </Animated.View>
+        <Text style={styles.sub_hedding}>{favorateList.length > 0 ? 'Favorate Album' : 'Your Album'}</Text>
 
         <FlatList
           scrollEnabled={false}
+
           keyExtractor={item => item.toString()}
           contentContainerStyle={{
             paddingLeft: responsiveui(0.05),
             paddingRight: responsiveui(0.05) - responsiveui(0.02),
           }}
           numColumns={3}
-          data={[
-            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-          ]}
-          renderItem={() => (
-            <Image
+          data={favorateList.length > 0 ? favorateList : allsongs}
+          renderItem={({ item, index }) => (
+            <Animated.Image
+              entering={FadeInDown.delay(200 * index)}
+
               resizeMode="cover"
-              style={styles.favorate_song_thumbnail}
-              source={require('../img/Rectangle.png')}
+              style={[styles.favorate_song_thumbnail, data.length - 1 === index && { marginBottom: hp(15) + wp(2.5) }]}
+              source={{ uri: item?.thumbnail }}
             />
           )}
         />
-      </View>
+      </Animated.View>
     </ScrollView>
   );
 };
@@ -75,11 +118,12 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: color.bagroundcolor,
+    // paddingBottom:
+
   },
   hedder: {
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
-    // paddingTop: responsiveui(0.05),
     paddingLeft: responsiveui(0.05),
   },
   personal_container: {
@@ -91,7 +135,7 @@ const styles = StyleSheet.create({
   dp_image: {
     flex: 1,
     height: responsiveui(0.3),
-    borderRadius: responsiveui(0.03),
+    borderRadius: wp(1),
   },
   personal_right_contaienr: {
     flex: 2,
@@ -99,39 +143,40 @@ const styles = StyleSheet.create({
   },
   usernaem: {
     color: color.textWhite,
-    fontSize: responsiveui(0.065),
+    fontSize: wp(6),
     fontFamily: 'Nunito-SemiBold',
     marginBottom: responsiveui(0.02),
   },
   email: {
     color: color.textdarckgrey,
     marginBottom: responsiveui(0.03),
-    fontSize: responsiveui(0.035),
+    fontSize: wp(4),
+    fontFamily: 'Nunito-Regular',
   },
   membership: {
     color: color.textdarckgrey,
+    fontSize: wp(4),
     fontFamily: 'Nunito-Regular',
-    fontSize: responsiveui(0.04),
     marginBottom: responsiveui(0.03),
   },
   discription: {
     color: color.textdarckgrey,
+    fontSize: wp(4),
     fontFamily: 'Nunito-Regular',
-    fontSize: responsiveui(0.04),
   },
   sub_hedding: {
     color: color.textWhite,
-    fontSize: responsiveui(0.065),
+    fontSize: wp(6),
     fontFamily: 'Nunito-SemiBold',
     paddingLeft: responsiveui(0.05),
-    paddingTop: responsiveui(0.1),
-    paddingBottom: responsiveui(0.05),
+    marginTop: wp(2.5),
+    marginBottom: wp(2),
   },
   favorate_song_thumbnail: {
-    width: responsiveui(0.285),
-    height: responsiveui(0.3),
-    borderRadius: responsiveui(0.03),
-    marginRight: responsiveui(0.02),
-    marginBottom: responsiveui(0.05),
+    width: wp(28.25),
+    height: wp(28.25),
+    borderRadius: wp(1),
+    marginRight: wp(2.5),
+    marginTop: wp(2.5),
   },
 });

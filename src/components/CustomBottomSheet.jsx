@@ -1,6 +1,6 @@
-import {Dimensions, StyleSheet, Text, View} from 'react-native';
-import React, {useCallback, useEffect, useImperativeHandle} from 'react';
-import {Gesture, GestureDetector} from 'react-native-gesture-handler';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useImperativeHandle } from 'react';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Extrapolate,
   interpolate,
@@ -9,14 +9,14 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import {hp} from '../config/width_hight_config';
-import {color} from '../config/style';
+import { hp } from '../config/width_hight_config';
+import { color } from '../config/style';
 
-const {height: SCREEN_HEIGHT} = Dimensions.get('window');
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const MAX_TRANSLATE_Y = -SCREEN_HEIGHT + 50;
 
-const BottomSheet = React.forwardRef(({children, currentPosition}, ref) => {
+const BottomSheet = React.forwardRef(({ children, currentPosition }, ref) => {
   const translateY = useSharedValue(0);
   const active = useSharedValue(false);
 
@@ -24,19 +24,19 @@ const BottomSheet = React.forwardRef(({children, currentPosition}, ref) => {
     'worklet';
     active.value = destination !== 0;
 
-    translateY.value = withSpring(destination, {damping: 20});
+    translateY.value = withSpring(destination, { damping: 20 });
   }, []);
 
   const isActive = useCallback(() => {
     return active.value;
   }, []);
 
-  useImperativeHandle(ref, () => ({scrollTo, isActive}), [scrollTo, isActive]);
+  useImperativeHandle(ref, () => ({ scrollTo, isActive }), [scrollTo, isActive]);
 
-  const context = useSharedValue({y: 0});
+  const context = useSharedValue({ y: 0 });
   const gesture = Gesture.Pan()
     .onStart(() => {
-      context.value = {y: translateY.value};
+      context.value = { y: translateY.value };
     })
     .onUpdate(event => {
       translateY.value = event.translationY + context.value.y;
@@ -62,7 +62,7 @@ const BottomSheet = React.forwardRef(({children, currentPosition}, ref) => {
     }
     return {
       borderRadius,
-      transform: [{translateY: translateY.value}],
+      transform: [{ translateY: translateY.value }],
     };
   });
 
@@ -88,7 +88,6 @@ const styles = StyleSheet.create({
   line: {
     width: 75,
     height: 4,
-
     backgroundColor: 'grey',
     alignSelf: 'center',
     marginVertical: 15,
