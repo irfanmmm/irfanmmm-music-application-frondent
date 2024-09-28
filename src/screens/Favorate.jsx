@@ -8,65 +8,78 @@ import {
   Text,
   View,
 } from 'react-native';
-import React, { useEffect, useState } from 'react';
-import { useSafeArea } from 'react-native-safe-area-context';
-import { color } from '../config/style';
-import { hp, responsiveui, wp } from '../config/width_hight_config';
-import Animated, { FadeInDown, FadeInLeft, SlideInLeft, SlideInRight, SlideOutLeft, SlideOutRight } from 'react-native-reanimated';
-import { setCurrentTab } from '../config/redux/reducer';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
-import { useApiCalls } from '../config/useApiCalls';
+import React, {useEffect, useState} from 'react';
+import {useSafeArea} from 'react-native-safe-area-context';
+import {color} from '../config/style';
+import {hp, responsiveui, wp} from '../config/width_hight_config';
+import Animated, {
+  FadeInDown,
+  FadeInLeft,
+  SlideInLeft,
+  SlideInRight,
+  SlideOutLeft,
+  SlideOutRight,
+} from 'react-native-reanimated';
+import {setCurrentTab} from '../config/redux/reducer';
+import {shallowEqual, useDispatch, useSelector} from 'react-redux';
+import AroowBack from 'react-native-vector-icons/Ionicons';
+import {useApiCalls} from '../config/useApiCalls';
+import json from '../config/dummydata';
+import {BASE_URL} from '../config/apicridentiols';
 
-const Favorate = ({ navigation }) => {
+const Favorate = ({navigation}) => {
   const insets = useSafeArea();
+  const dispatch = useDispatch();
 
-  const { loading, getAllsongs, likedSongs } = useApiCalls()
-  const { profileDetails } = useSelector(state => ({
-    profileDetails: state.store.profiledetails
-  }), shallowEqual)
+  const {loading, getAllsongs, likedSongs} = useApiCalls();
+  const {profileDetails} = useSelector(
+    state => ({
+      profileDetails: state.store.profiledetails,
+    }),
+    shallowEqual,
+  );
 
-  const [favorateList, setFavorateList] = useState([])
-  const [allsongs, setAllsongs] = useState([])
+  const [favorateList, setFavorateList] = useState([]);
+  const [allsongs, setAllsongs] = useState([]);
+
+  console.log(allsongs);
 
   useEffect(() => {
-
-    (
-      async () => {
-
-        const response = await likedSongs()
-        if (!response.status) {
-          const response = await getAllsongs()
-          setAllsongs(response?.data)
-        } else {
-          setFavorateList(response.data)
-
-        }
-
+    (async () => {
+      const response = await likedSongs();
+      if (!response.status) {
+        const response = await getAllsongs()
+        setAllsongs(response.data);
+      } else {
+        setFavorateList(response.data);
       }
-    )()
-
-
-  }, [])
-
-
-
+    })();
+  }, []);
 
   const data = [
     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-  ]
+  ];
 
+  const handleNavigate = (song, index) => {
+    dispatch(setCurrentTab('MusicPlayer'));
+    navigation.navigate('MusicPlayer', {
+      slectedSong: song,
+      selectedIndex: index,
+    });
+  };
 
   return (
     <ScrollView
-      style={[styles.safeArea, { paddingTop: insets.top === 0 ? hp(5) : insets.top + hp(2) }]}
+      style={[
+        styles.safeArea,
+        {paddingTop: insets.top === 0 ? hp(5) : insets.top + hp(2)},
+      ]}
       showsVerticalScrollIndicator={false}>
-      <Animated.View
-        entering={SlideInLeft} exiting={SlideOutRight}
-      >
+      <Animated.View entering={SlideInLeft} exiting={SlideOutRight}>
         <Pressable
           onPress={() => navigation.navigate('Home')}
           style={styles.hedder}>
-          <Image source={require('../img/arrow-left.png')} />
+          <AroowBack name="arrow-back" color={color.textWhite} size={wp(7)} />
         </Pressable>
         <Animated.View
           entering={FadeInLeft.delay(200)}
@@ -74,7 +87,7 @@ const Favorate = ({ navigation }) => {
           <Image
             resizeMode="stretch"
             style={styles.dp_image}
-            source={profileDetails?.profile ? { uri: profileDetails?.profile } : require('../img/Rectangle.png')}
+            source={{uri: profileDetails?.profile}}
           />
           <View style={styles.personal_right_contaienr}>
             <Text style={styles.usernaem}>{profileDetails?.username}</Text>
@@ -85,11 +98,11 @@ const Favorate = ({ navigation }) => {
             </Text>
           </View>
         </Animated.View>
-        <Text style={styles.sub_hedding}>{favorateList.length > 0 ? 'Favorate Album' : 'Your Album'}</Text>
-
+        <Text style={styles.sub_hedding}>
+          {favorateList.length > 0 ? 'Favorate Album' : 'Your Album'}
+        </Text>
         <FlatList
           scrollEnabled={false}
-
           keyExtractor={item => item.toString()}
           contentContainerStyle={{
             paddingLeft: responsiveui(0.05),
@@ -97,14 +110,27 @@ const Favorate = ({ navigation }) => {
           }}
           numColumns={3}
           data={favorateList.length > 0 ? favorateList : allsongs}
-          renderItem={({ item, index }) => (
-            <Animated.Image
-              entering={FadeInDown.delay(200 * index)}
-
-              resizeMode="cover"
-              style={[styles.favorate_song_thumbnail, data.length - 1 === index && { marginBottom: hp(15) + wp(2.5) }]}
-              source={{ uri: item?.thumbnail }}
-            />
+          renderItem={({item, index}) => (
+            <Pressable
+              style={[
+                {
+                  marginRight: wp(2.5),
+                  marginTop: wp(2.5),
+                },
+                data.length - 1 === index && {marginBottom: hp(15) + wp(2.5)},
+              ]}
+              onPress={() => handleNavigate(item, index)}>
+              <Animated.Image
+                entering={FadeInDown.delay(200 * index)}
+                resizeMode="cover"
+                style={[styles.favorate_song_thumbnail]}
+                source={
+                  item?.artwork
+                    ? {uri: BASE_URL + item?.artwork}
+                    : require('../img/unknown_track.png')
+                }
+              />
+            </Pressable>
           )}
         />
       </Animated.View>
@@ -119,7 +145,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: color.bagroundcolor,
     // paddingBottom:
-
   },
   hedder: {
     justifyContent: 'flex-start',
@@ -176,7 +201,5 @@ const styles = StyleSheet.create({
     width: wp(28.25),
     height: wp(28.25),
     borderRadius: wp(1),
-    marginRight: wp(2.5),
-    marginTop: wp(2.5),
   },
 });

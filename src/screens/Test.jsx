@@ -132,7 +132,7 @@ import {
               <View style={styles.left_thumbnail}>
                 <Image
                   style={styles.left_thumbnail_image}
-                  source={require('../img/Rectangle.png')}
+                  source={require('../img/unknown_track.png')}
                 />
                 <View style={styles.left_content}>
                   <Text style={styles.left_hedding}>Gundellona</Text>
@@ -160,7 +160,7 @@ import {
                   style={styles.thumbnail_container}>
                   <Image
                     resizeMode="cover"
-                    source={require('../img/Rectangle.png')}
+                    source={require('../img/unknown_track.png')}
                     style={styles.thumbnail}
                   />
                   <Text style={styles.song_hedding}>Ophelia</Text>

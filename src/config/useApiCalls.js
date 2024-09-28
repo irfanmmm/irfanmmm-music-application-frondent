@@ -2,7 +2,7 @@ import { API_CRIDENTIOLS } from "./apicridentiols";
 import { useAxios } from "./useAxios";
 
 export const useApiCalls = () => {
-    const { fetchData, data, loading, error } = useAxios();
+    const { fetchData, loading, error } = useAxios();
 
     const signup = async (email, name, photo) => {
         const response = await fetchData({
@@ -28,6 +28,7 @@ export const useApiCalls = () => {
 
 
     const getAllsongs = async () => {
+        
         const response = await fetchData({
             url: API_CRIDENTIOLS.SONG_DETAILS,
         })

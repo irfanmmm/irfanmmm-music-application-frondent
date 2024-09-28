@@ -1,66 +1,34 @@
-import {
-  Image,
-  Pressable,
-  StyleSheet,
-  View,
-  Animated,
-} from 'react-native';
-import React, { useContext, useEffect, useRef, useState } from 'react';
-
-import SplashScreen from 'react-native-splash-screen';
+import {Image, Pressable, StyleSheet, View, Animated} from 'react-native';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   createBottomTabNavigator,
   BottomTabBar,
 } from '@react-navigation/bottom-tabs';
-import { NavigationContainer, useNavigation, useNavigationState } from '@react-navigation/native';
-import {
-  createStackNavigator,
-  TransitionPresets,
-} from '@react-navigation/stack';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import {NavigationContainer, useNavigation} from '@react-navigation/native';
+import {createStackNavigator, TransitionPresets} from '@react-navigation/stack';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import Login from './Login';
-import { hp, wp } from '../config/width_hight_config';
-import { TABS_ROUTES } from '../config/routes';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
-import { setCurrentTab } from '../config/redux/reducer';
-import { color } from '../config/style';
-
+import {hp, wp} from '../config/width_hight_config';
+import {TABS_ROUTES} from '../config/routes';
+import {shallowEqual, useDispatch, useSelector} from 'react-redux';
+import {color} from '../config/style';
+import InitiolScreen from './SplashScreen';
+import ErrorScreen from './ErrorScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
 const Root = () => {
-
-
   const tabBarHeight = useRef(new Animated.Value(hp(0))).current;
-  const state = useSelector(state => ({
-    userlogin: state.store.userlogin,
-    currentTab: state.store.currentTab,
-  }), shallowEqual)
-  const dispatch = useDispatch()
-  const [iseLogged, setIsLoagged] = useState(true)
-
-
-
-
-  useEffect(() => {
-
-    AsyncStorage.getItem('user-data').then((res) => {
-      if (res) {
-
-        setIsLoagged(true);
-        SplashScreen.hide();
-      } else {
-        setIsLoagged(false);
-        SplashScreen.hide();
-      }
-    }).catch((error) => {
-      setIsLoagged(false);
-      SplashScreen.hide();
-    })
-
-  }, []);
+  const state = useSelector(
+    state => ({
+      userlogin: state.store.userlogin,
+      currentTab: state.store.currentTab,
+    }),
+    shallowEqual,
+  );
+  const dispatch = useDispatch();
+  const [iseLogged, setIsLoagged] = useState(true);
 
   useEffect(() => {
     if (state.currentTab === 'MusicPlayer') {
@@ -78,18 +46,15 @@ const Root = () => {
       }).start();
       // setShowTabBar(true);
     }
-  }, [state.currentTab])
-
-
-
+  }, [state.currentTab]);
 
   function Tabs() {
-    const navigation = useNavigation()
+    const navigation = useNavigation();
     return (
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
-          tabBarStyle: { backgroundColor: 'transparent' },
+          tabBarStyle: {backgroundColor: 'transparent'},
         }}
         tabBar={props => (
           <Animated.View
@@ -129,11 +94,11 @@ const Root = () => {
                 borderTopRightRadius: wp(5),
               },
               tabBarShowLabel: false,
-              tabBarIcon: ({ focused }) => {
+              tabBarIcon: ({focused}) => {
                 return (
                   <View style={styles.iconContainer}>
                     <Image
-                      style={{ width: '60%', height: '60%' }}
+                      style={{width: '60%', height: '60%'}}
                       resizeMode="contain"
                       source={focused ? item.active : item.diactivate}
                     />
@@ -158,22 +123,19 @@ const Root = () => {
     );
   }
 
-
   return (
-
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{flex: 1}}>
       <NavigationContainer>
         <Stack.Navigator
           screenOptions={{
             headerShown: false,
-            tabBarStyle: { backgroundColor: 'transparent' },
+            tabBarStyle: {backgroundColor: 'transparent'},
             ...TransitionPresets.SlideFromRightIOS,
           }}>
-          {
-            iseLogged || state.userlogin ?
-              <Stack.Screen name="Tabs" component={Tabs} /> :
-              <Stack.Screen name="Login" component={Login} />
-          }
+          <Stack.Screen name="SplashScreen" component={InitiolScreen} />
+          <Stack.Screen name="Login" component={Login} />
+          <Stack.Screen name="Tabs" component={Tabs} />
+          <Stack.Screen name="ErrorScreen" component={ErrorScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>

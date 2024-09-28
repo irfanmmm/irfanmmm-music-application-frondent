@@ -7,21 +7,19 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, { useEffect } from 'react';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { AccessToken, LoginButton, Profile } from 'react-native-fbsdk-next';
-import { responsiveui } from '../config/width_hight_config';
-import { color } from '../config/style';
+import React, {useEffect} from 'react';
+import {GoogleSignin} from '@react-native-google-signin/google-signin';
+import {AccessToken, LoginButton, Profile} from 'react-native-fbsdk-next';
+import {responsiveui} from '../config/width_hight_config';
+import {color} from '../config/style';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useApiCalls } from '../config/useApiCalls';
-import { useDispatch } from 'react-redux';
-import { userIsLogin } from '../config/redux/reducer';
+import {useApiCalls} from '../config/useApiCalls';
+import {useDispatch} from 'react-redux';
+import {userIsLogin} from '../config/redux/reducer';
 
-const Login = ({ navigation }) => {
-  const dispatch = useDispatch()
-  const { signup, error } = useApiCalls()
-
-
+const Login = ({navigation}) => {
+  const dispatch = useDispatch();
+  const {signup} = useApiCalls();
 
   useEffect(() => {
     GoogleSignin.configure({
@@ -30,31 +28,35 @@ const Login = ({ navigation }) => {
     });
   }, []);
   const handleLogin = async () => {
-    try {
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
+    // try {
+    await GoogleSignin.hasPlayServices();
+    const userInfo = await GoogleSignin.signIn();
 
-      let email = userInfo.user.email;
-      let name = userInfo.user.name;
-      let photo = userInfo.user.photo;
+    let email = userInfo.user.email;
+    let name = userInfo.user.name;
+    let photo = userInfo.user.photo;
+    const respose = await signup(email, name, photo);
+    console.log(email);
 
-      const respose = await signup(email, name, photo)
+    await AsyncStorage.setItem('user-data', JSON.stringify(respose?.data));
 
-      await AsyncStorage.setItem('user-data', JSON.stringify(respose.data))
-      dispatch(userIsLogin(true))
-      navigation.navigate('Tabs');
-    } catch (error) {
-    }
+    navigation.navigate('Tabs');
+    // } catch (error) {
+    //   console.log(error);
+
+    //   // navigation.navigate('ErrorScreen', {
+    //   //   error: error.toString(),
+    //   // });
+    // }
   };
 
   const handleLoginFaceBook = (error, result) => {
-
     if (error) {
     } else if (result.isCancelled) {
     } else {
       AccessToken.getCurrentAccessToken().then(async data => {
-        await AsyncStorage.setItem('user-data', JSON.stringify(data))
-        dispatch(userIsLogin(true))
+        await AsyncStorage.setItem('user-data', JSON.stringify(data));
+        dispatch(userIsLogin(true));
         navigation.navigate('Tabs');
       });
       const currentProfile = Profile.getCurrentProfile().then(function (
