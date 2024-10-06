@@ -11,25 +11,29 @@ import {
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import {useSafeArea} from 'react-native-safe-area-context';
-import {hp, responsiveui, wp} from '../config/width_hight_config';
-import {color} from '../config/style';
+import {color} from '../styles/style';
+import {hp, responsiveui, wp} from '../styles/responsive';
 import {HomeCard} from '../components/HomeCard';
 import {HomeHoriZontalCard} from '../components/HomeHoriZontalCard';
-import {useApiCalls} from '../config/useApiCalls';
+import {useApiCalls} from '../hooks/useApiCalls';
 import {setProfile} from '../config/redux/reducer';
 import {shallowEqual, useDispatch, useSelector} from 'react-redux';
 import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 import Feather from 'react-native-vector-icons/Feather';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import json from '../config/dummydata';
 import ReAnimated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import {useSetupTrackPlayer} from '../trackplayer/useSetupTrackPlayer';
+import { MinimisedContainer } from '../components/MinimisedContainer';
 
 const Home = ({navigation}) => {
+  useSetupTrackPlayer({
+    onLoad: () => {},
+  });
   const dispatch = useDispatch();
   const insets = useSafeArea();
   const {getProfileDetails, loading, getAllsongs, recentsongs} = useApiCalls();
@@ -275,6 +279,7 @@ const Home = ({navigation}) => {
               );
             })}
       </ScrollView>
+      <MinimisedContainer/>
     </View>
   );
 };

@@ -4,14 +4,15 @@ import {
   useSharedValue,
 } from 'react-native-reanimated';
 import TextTicker from 'react-native-text-ticker';
-import {hp, responsiveui} from '../config/width_hight_config';
+import {color} from '../styles/style';
+import {hp, responsiveui} from '../styles/responsive';
 import Reanimated, {
   useAnimatedStyle,
   interpolate,
   Extrapolate,
 } from 'react-native-reanimated';
 import {View, Text} from 'react-native';
-import {BASE_URL} from '../config/apicridentiols';
+import {BASE_URL} from '../config/urls';
 
 export const renderItem = ({item, index}) => {
   const scrollXx = useSharedValue(0);

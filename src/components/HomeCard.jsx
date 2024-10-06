@@ -1,13 +1,12 @@
 import React from 'react';
-import {Image, Pressable, StyleSheet, Text, View} from 'react-native';
+import {Pressable, StyleSheet, Text, View} from 'react-native';
 import Animated, {FadeInDown} from 'react-native-reanimated';
-import {color} from '../config/style';
-import {responsiveui, wp} from '../config/width_hight_config';
-import {useNavigation} from '@react-navigation/native';
+import {color} from '../styles/style';
+import {responsiveui, wp} from '../styles/responsive';
 import {useDispatch} from 'react-redux';
 import {setCurrentTab} from '../config/redux/reducer';
 import TextTicker from 'react-native-text-ticker';
-import {BASE_URL} from '../config/apicridentiols';
+import {BASE_URL} from '../config/urls';
 
 export const HomeCard = ({item, index, onPress}) => {
   const dispatch = useDispatch();

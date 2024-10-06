@@ -10,10 +10,10 @@ import {
 import React, {useEffect} from 'react';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import {AccessToken, LoginButton, Profile} from 'react-native-fbsdk-next';
-import {responsiveui} from '../config/width_hight_config';
-import {color} from '../config/style';
+import {color} from '../styles/style';
+import {responsiveui} from '../styles/responsive';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useApiCalls} from '../config/useApiCalls';
+import {useApiCalls} from '../hooks/useApiCalls';
 import {useDispatch} from 'react-redux';
 import {userIsLogin} from '../config/redux/reducer';
 

@@ -1,19 +1,10 @@
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  Image,
-  Pressable,
-} from 'react-native';
+import {StyleSheet, Text, View, Pressable} from 'react-native';
 import React from 'react';
-import {color} from '../config/style';
-import {responsiveui, wp} from '../config/width_hight_config';
-import Icon from 'react-native-vector-icons/Feather';
-import Entypo from 'react-native-vector-icons/Entypo';
-import TextTicker from 'react-native-text-ticker';
+import {color} from '../styles/style';
+import {responsiveui, wp} from '../styles/responsive';
 import FastImage from 'react-native-fast-image';
-import {BASE_URL} from '../config/apicridentiols';
+import {BASE_URL} from '../config/urls';
+import {Pause, Play} from 'react-native-feather';
 
 const BottomSheetUi = ({
   title,
@@ -32,36 +23,51 @@ const BottomSheetUi = ({
         styles.parent_item,
         // index === activeTrack && {backgroundColor: color.modal_baground},
       ]}>
-      <View style={{flexDirection: 'row'}}>
+      <View style={{flexDirection: 'row', overflow: 'hidden'}}>
         <View style={styles.image}>
           <FastImage
-            style={{width: '100%', height: '100%'}}
+            resizeMode={FastImage.resizeMode.cover}
             source={
               img
-                ? {uri: BASE_URL + img, priority: FastImage.priority.normal}
+                ? {
+                    uri: img?.includes('http')
+                      ? img
+                      : img?.includes('https')
+                      ? img
+                      : BASE_URL + img,
+                    priority: FastImage.priority.high,
+                  }
                 : require('../img/unknown_track.png')
             }
-            resizeMode={FastImage.resizeMode.cover}
+            style={{
+              width: '100%',
+              height: '100%',
+              overflow: 'hidden',
+              borderRadius: wp(2),
+            }}
           />
         </View>
         <View style={styles.text_container}>
-          <TextTicker style={styles.song_name} duration={10000} loop bounce>
-            {title || 'Unknown'}
-          </TextTicker>
-          <TextTicker style={styles.singer} duration={10000} loop bounce>
-            {artist || 'Unknown'}
-          </TextTicker>
+          <Text
+            style={[
+              styles.song_name,
+              index === activeTrack && {color: '#E7B10A'},
+            ]}
+            numberOfLines={1}
+            ellipsizeMode="tail">
+            {title || 'Unknown'} amet consectetur adipisicing elit.
+          </Text>
+          <Text
+            style={[styles.singer, index === activeTrack && {color: '#ddc98e'}]}
+            numberOfLines={1}
+            ellipsizeMode="tail">
+            {artist || 'Unknown'} Lorem ipsum dolor, sit amet consectetur
+            adipisicing elit. Fugiat eaque necessitatibus optio fugit. Adipisci
+            excepturi veniam eius optio qui ullam vero sed a expedita. In
+            quaerat amet sunt explicabo animi!
+          </Text>
         </View>
       </View>
-      {index === activeTrack && (
-        <Pressable onPress={onPlay}>
-          {Playing ? (
-            <Icon name="pause" size={wp(7)} />
-          ) : (
-            <Entypo name="controller-play" size={wp(7)} />
-          )}
-        </Pressable>
-      )}
     </Pressable>
   );
 };
@@ -75,9 +81,9 @@ const styles = StyleSheet.create({
     // opacity:0.01
   },
   parent_item: {
-    // width: '100%',
-    paddingHorizontal: responsiveui(0.025),
-    marginHorizontal: responsiveui(0.05),
+    width: '100%',
+    // paddingHorizontal: wp(1),
+    paddingHorizontal: wp(5),
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -92,18 +98,21 @@ const styles = StyleSheet.create({
     borderRadius: responsiveui(0.05),
   },
   text_container: {
-    marginLeft: responsiveui(0.04),
+    width: wp(72),
+    marginLeft: wp(4),
+    paddingRight: wp(2.5),
+    // maxWidth: wp(63),
   },
   song_name: {
     color: color.textWhite,
-    fontFamily: 'Nunito-SemiBold',
+    fontFamily: 'Nunito-ExtraBold',
     fontSize: responsiveui(0.045),
   },
   singer: {
     color: color.textdarckgrey,
-    fontFamily: 'Nunito-Regular',
+    fontFamily: 'Nunito-Bold',
     fontSize: responsiveui(0.04),
     overflow: 'hidden',
-    marginTop: responsiveui(0.015),
+    // marginTop: responsiveui(0.015),
   },
 });

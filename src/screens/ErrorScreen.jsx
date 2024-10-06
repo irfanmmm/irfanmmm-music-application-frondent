@@ -1,7 +1,7 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
-import {color} from '../config/style';
-import {wp} from '../config/width_hight_config';
+import {color} from '../styles/style';
+import {hp, responsiveui, wp} from '../styles/responsive';
 import {useRoute} from '@react-navigation/native';
 
 const ErrorScreen = () => {

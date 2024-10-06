@@ -1,5 +1,5 @@
-import {Dimensions, StyleSheet, Text, View} from 'react-native';
-import React, {useCallback, useEffect, useImperativeHandle} from 'react';
+import {Dimensions, StyleSheet, View} from 'react-native';
+import React, {useCallback, useImperativeHandle} from 'react';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import Animated, {
   Extrapolate,
@@ -9,75 +9,114 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import {hp} from '../config/width_hight_config';
-import {color} from '../config/style';
+import {hp, wp} from '../styles/responsive';
+import LinearGradient from 'react-native-linear-gradient';
+import {Text} from 'react-native-svg';
+import {color} from '../styles/style';
+import {useProgress} from 'react-native-track-player';
 
 const {height: SCREEN_HEIGHT} = Dimensions.get('window');
 
-const MAX_TRANSLATE_Y = -SCREEN_HEIGHT + 20;
+export const MAX_TRANSLATE_Y = -SCREEN_HEIGHT + 20;
 
-const BottomSheet = React.forwardRef(({children, currentPosition}, ref) => {
-  const translateY = useSharedValue(0);
-  const active = useSharedValue(false);
+const BottomSheet = React.forwardRef(
+  ({children, activeTrack, currentPosition}, ref) => {
+    const progress = useProgress();
+    const translateY = useSharedValue(0);
 
-  const scrollTo = useCallback(destination => {
-    'worklet';
-    active.value = destination !== 0;
+    const active = useSharedValue(false);
 
-    translateY.value = withSpring(destination, {damping: 20});
-  }, []);
+    const scrollTo = useCallback(destination => {
+      'worklet';
+      active.value = destination !== 0;
 
-  const isActive = useCallback(() => {
-    return active.value;
-  }, []);
+      translateY.value = withSpring(destination, {damping: 20});
+    }, []);
 
-  useImperativeHandle(ref, () => ({scrollTo, isActive}), [scrollTo, isActive]);
+    const isActive = useCallback(() => {
+      return active.value;
+    }, []);
 
-  const context = useSharedValue({y: 0});
-  const gesture = Gesture.Pan()
-    .onStart(() => {
-      context.value = {y: translateY.value};
-    })
-    .onUpdate(event => {
-      const newTranslateY = event.translationY + context.value.y;
-      translateY.value = Math.min(Math.max(newTranslateY, MAX_TRANSLATE_Y), 0);
-    })
-    .onEnd(() => {
-      if (translateY.value > -SCREEN_HEIGHT / 3) {
-        scrollTo(0); // Snap to closed
-      } else {
-        scrollTo(MAX_TRANSLATE_Y); // Snap to expanded
+    useImperativeHandle(ref, () => ({scrollTo, isActive}), [
+      scrollTo,
+      isActive,
+    ]);
+
+    const context = useSharedValue({y: 0});
+    const gesture = Gesture.Pan()
+      .onStart(() => {
+        context.value = {y: translateY.value};
+      })
+      .onUpdate(event => {
+        const newTranslateY = event.translationY + context.value.y;
+        translateY.value = Math.min(
+          Math.max(newTranslateY, MAX_TRANSLATE_Y),
+          0,
+        );
+      })
+      .onEnd(() => {
+        if (translateY.value > -SCREEN_HEIGHT / 3) {
+          scrollTo(0); // Snap to closed
+        } else {
+          scrollTo(MAX_TRANSLATE_Y); // Snap to expanded
+        }
+      });
+
+    const rBottomSheetStyle = useAnimatedStyle(() => {
+      const borderRadius = interpolate(
+        translateY.value,
+        [MAX_TRANSLATE_Y + 50, MAX_TRANSLATE_Y],
+        [25, 5],
+        Extrapolate.CLAMP,
+      );
+
+      // Call the currentPosition function with the translated value
+      if (currentPosition && typeof currentPosition === 'function') {
+        runOnJS(currentPosition)(translateY.value);
       }
+
+      return {
+        borderRadius,
+        transform: [{translateY: translateY.value}],
+      };
     });
 
-  const rBottomSheetStyle = useAnimatedStyle(() => {
-    const borderRadius = interpolate(
-      translateY.value,
-      [MAX_TRANSLATE_Y + 50, MAX_TRANSLATE_Y],
-      [25, 5],
-      Extrapolate.CLAMP,
+    return (
+      <GestureDetector gesture={gesture}>
+        <Animated.View style={[styles.bottomSheetContainer, rBottomSheetStyle]}>
+          {/* <View style={styles.line} /> */}
+          <LinearGradient
+            colors={activeTrack ?? [color.bluecolor, color.bagroundcolor]}
+            style={{flex: 1, backgroundColor: color.bagroundcolor}}>
+            <View
+              style={{
+                borderTopColor: color.textWhite,
+                borderTopWidth: 1,
+                width: isNaN((progress.position / progress?.duration) * wp(100))
+                  ? wp(0)
+                  : (progress.position / progress?.duration) * wp(100),
+
+                marginBottom: wp(3),
+              }}
+            />
+            <Text
+              style={[
+                styles.bottm_text,
+                {
+                  color: color.textWhite,
+                  textAlign: 'center',
+                  marginBottom: wp(2),
+                },
+              ]}>
+              RECENT SONGS
+            </Text>
+            {children}
+          </LinearGradient>
+        </Animated.View>
+      </GestureDetector>
     );
-
-    // Call the currentPosition function with the translated value
-    if (currentPosition && typeof currentPosition === 'function') {
-      runOnJS(currentPosition)(translateY.value);
-    }
-
-    return {
-      borderRadius,
-      transform: [{translateY: translateY.value}],
-    };
-  });
-
-  return (
-    <GestureDetector gesture={gesture}>
-      <Animated.View style={[styles.bottomSheetContainer, rBottomSheetStyle]}>
-        {/* <View style={styles.line} /> */}
-        {children}
-      </Animated.View>
-    </GestureDetector>
-  );
-});
+  },
+);
 
 const styles = StyleSheet.create({
   bottomSheetContainer: {
@@ -95,6 +134,11 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginVertical: 15,
     borderRadius: 2,
+  },
+  bottm_text: {
+    color: color.textdarckgrey,
+    fontFamily: 'Nunito-Bold',
+    fontSize: wp(4.5),
   },
 });
 

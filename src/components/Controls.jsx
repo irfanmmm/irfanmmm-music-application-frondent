@@ -1,9 +1,8 @@
 import React from "react"
 import { Image, Pressable, StyleSheet, View } from "react-native"
-import Animated, { FadeInDown, SlideInDown, SlideInLeft, SlideOutLeft } from "react-native-reanimated"
-import { color } from "../config/style"
-import { responsiveui, wp } from "../config/width_hight_config"
-import { useNavigation } from "@react-navigation/native"
+import Animated, { FadeInDown} from "react-native-reanimated"
+import {color} from '../styles/style';
+import { wp} from '../styles/responsive';
 
 
 export const Controls = ({ playingState, item, index, onPress }) => {

@@ -10,8 +10,8 @@ import {
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import {useSafeArea} from 'react-native-safe-area-context';
-import {color} from '../config/style';
-import {hp, responsiveui, wp} from '../config/width_hight_config';
+import {color} from '../styles/style';
+import {hp, responsiveui, wp} from '../styles/responsive';
 import Animated, {
   FadeInDown,
   FadeInLeft,
@@ -23,9 +23,8 @@ import Animated, {
 import {setCurrentTab} from '../config/redux/reducer';
 import {shallowEqual, useDispatch, useSelector} from 'react-redux';
 import AroowBack from 'react-native-vector-icons/Ionicons';
-import {useApiCalls} from '../config/useApiCalls';
-import json from '../config/dummydata';
-import {BASE_URL} from '../config/apicridentiols';
+import {useApiCalls} from '../hooks/useApiCalls';
+import {BASE_URL} from '../config/urls';
 
 const Favorate = ({navigation}) => {
   const insets = useSafeArea();
@@ -48,7 +47,7 @@ const Favorate = ({navigation}) => {
     (async () => {
       const response = await likedSongs();
       if (!response.status) {
-        const response = await getAllsongs()
+        const response = await getAllsongs();
         setAllsongs(response.data);
       } else {
         setFavorateList(response.data);
@@ -99,7 +98,7 @@ const Favorate = ({navigation}) => {
           </View>
         </Animated.View>
         <Text style={styles.sub_hedding}>
-          {favorateList.length > 0 ? 'Favorate Album' : 'Your Album'}
+          {favorateList?.length > 0 ? 'Favorate Album' : 'Your Album'}
         </Text>
         <FlatList
           scrollEnabled={false}

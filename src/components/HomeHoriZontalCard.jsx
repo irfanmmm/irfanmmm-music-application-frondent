@@ -1,13 +1,13 @@
 import React from 'react';
-import {Image, Pressable, StyleSheet, Text, View} from 'react-native';
-import Animated, {FadeInDown, FadeInRight} from 'react-native-reanimated';
-import {color} from '../config/style';
-import {responsiveui, wp} from '../config/width_hight_config';
+import {Image, Pressable, StyleSheet, View} from 'react-native';
+import Animated, {FadeInRight} from 'react-native-reanimated';
+import {color} from '../styles/style';
+import {wp} from '../styles/responsive';
 import {useNavigation} from '@react-navigation/native';
 import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 import {useDispatch} from 'react-redux';
 import {setCurrentTab} from '../config/redux/reducer';
-import {BASE_URL} from '../config/apicridentiols';
+import {BASE_URL} from '../config/urls';
 import TextTicker from 'react-native-text-ticker';
 
 export const HomeHoriZontalCard = ({item, index, loading}) => {

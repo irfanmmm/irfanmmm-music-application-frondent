@@ -1,13 +1,12 @@
-import React from "react"
-import Root from "./src/screens/Root"
-import { ThemeProvider } from "./src/rootstate/ContextApi"
-import { Provider } from "react-redux"
-import store from "./src/config/redux/store"
+import React from 'react';
+import {Provider} from 'react-redux';
+import store from './src/config/redux/store';
+import StackNavigator from './src/routes/StackNavigator';
 const App = () => {
   return (
     <Provider store={store}>
-      <Root />
+      <StackNavigator />
     </Provider>
-  )
-}
-export default App
+  );
+};
+export default App;
