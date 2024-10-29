@@ -2,65 +2,39 @@ import {
   BottomTabBar,
   createBottomTabNavigator,
 } from '@react-navigation/bottom-tabs';
-import {View, Image, Pressable, StyleSheet, Animated} from 'react-native';
+import {View, Image, Pressable, StyleSheet} from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import {TABS_ROUTES} from './routes';
 import {color} from '../styles/style';
-import {hp, wp} from '../styles/responsive';
-import {useEffect, useRef} from 'react';
-import {shallowEqual, useSelector} from 'react-redux';
+import {wp} from '../styles/responsive';
 import {TransitionPresets} from '@react-navigation/stack';
-import {useNavigation, useNavigationState} from '@react-navigation/native';
+import {useNavigationState} from '@react-navigation/native';
 
 const CustomTabBar = props => {
-  const navigation = useNavigation();
-  const tabBarHeight = useRef(new Animated.Value(hp(0))).current;
-  const state = useSelector(
-    state => ({
-      userlogin: state.store.userlogin,
-      currentTab: state.store.currentTab,
-    }),
-    shallowEqual,
-  );
-
-  useEffect(() => {
-    if (state.currentTab === 'MusicPlayer') {
-      Animated.timing(tabBarHeight, {
-        toValue: hp(-15),
-        duration: 1000,
-        useNativeDriver: false,
-      }).start();
+  const translateY = useSharedValue(0);
+  const navigationState = useNavigationState(state => state);
+  const animatedStyle = useAnimatedStyle(() => {
+    if (navigationState?.routes[1]?.state?.index === 1) {
+      translateY.value = 100;
     } else {
-      Animated.timing(tabBarHeight, {
-        toValue: hp(0),
-        duration: 0,
-        useNativeDriver: false,
-      }).start();
+      translateY.value = 0;
     }
-  }, [state.currentTab]);
-  // Get the current navigation state
-  const navigationState = navigation.getState();
-  const routeName = navigationState.routes[navigationState.index].name;// Active tab name
-
-  console.log('Active Tab Index:', navigationState);
-//   console.log('Active Tab Name:', activeTabName);
-
-  //   console.log('Active Tab Index:', currentTabIndex);
-  //   console.log('Active Tab Name:', activeTab);
+    return {
+      transform: [
+        {
+          translateY: withTiming(translateY.value, 1000),
+        },
+      ],
+    };
+  });
 
   return (
-    <Animated.View
-      style={{
-        position: 'absolute',
-        bottom: tabBarHeight,
-        left: 0,
-        width: '100%',
-      }}>
-      <View
-        style={{
-          // height: '100%',
-          backgroundColor: '#0a071e',
-          borderTopColor: '#0a071e',
-        }}>
+    <Animated.View style={[styles.tabBarmainContainer, animatedStyle]}>
+      <View style={styles.tabBarsubcontainer}>
         <BottomTabBar {...props} />
       </View>
     </Animated.View>
@@ -70,17 +44,17 @@ const CustomTabBar = props => {
 const TabNavigator = () => {
   const Tab = createBottomTabNavigator();
 
+  const onSwithTabs = path => {
+    // if(path === '')
+  };
+
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarStyle: {backgroundColor: 'transparent'},
       }}
-      //   tabBar={props => {
-
-      tabBar={props => <CustomTabBar {...props} />}
-      //   }}
-    >
+      tabBar={props => <CustomTabBar {...props} />}>
       {TABS_ROUTES.map((item, index) => (
         <Tab.Screen
           key={index}
@@ -88,18 +62,8 @@ const TabNavigator = () => {
           component={item.component}
           options={{
             ...TransitionPresets.SlideFromRightIOS,
-            tabBarStyle: {
-              backgroundColor: color.bagroundcolor,
-              borderTopColor: color.bagroundcolor,
-              position: 'absolute',
-              height: wp(20),
-              paddingBottom: wp(5),
-              bottom: 0,
-              right: wp(5),
-              left: wp(5),
-              borderTopLeftRadius: wp(5),
-              borderTopRightRadius: wp(5),
-            },
+            tabBarStyle: styles.tabBarStyle,
+
             tabBarShowLabel: false,
             tabBarIcon: ({focused}) => {
               return (
@@ -117,7 +81,7 @@ const TabNavigator = () => {
                 {...props}
                 onPress={() => {
                   props.onPress();
-                  // handleTabPress(false)
+                  onSwithTabs(props.to);
                 }}
                 style={styles.tabBarButton}>
                 <View style={styles.tabButtonView}>{props.children}</View>
@@ -131,6 +95,16 @@ const TabNavigator = () => {
 };
 
 const styles = StyleSheet.create({
+  tabBarmainContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    width: '100%',
+  },
+  tabBarsubcontainer: {
+    backgroundColor: '#0a071e',
+    borderTopColor: '#0a071e',
+  },
   iconContainer: {
     width: '100%',
     height: 50,
@@ -146,6 +120,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  tabBarStyle: {
+    backgroundColor: color.bagroundcolor,
+    borderTopColor: color.bagroundcolor,
+    position: 'absolute',
+    height: wp(20),
+    paddingBottom: wp(5),
+    bottom: 0,
+    right: wp(5),
+    left: wp(5),
+    borderTopLeftRadius: wp(5),
+    borderTopRightRadius: wp(5),
   },
 });
 

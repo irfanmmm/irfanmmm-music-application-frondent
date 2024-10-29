@@ -1,17 +1,10 @@
-import {
-  Button,
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {Image, Pressable, StyleSheet, Text, View} from 'react-native';
 import React, {useEffect} from 'react';
+import messaging from '@react-native-firebase/messaging';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import {AccessToken, LoginButton, Profile} from 'react-native-fbsdk-next';
 import {color} from '../styles/style';
-import {hp, responsiveui, wp} from '../styles/responsive';
+import {hp, wp} from '../styles/responsive';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useApiCalls} from '../hooks/useApiCalls';
 import {useDispatch} from 'react-redux';
@@ -24,9 +17,27 @@ const Login = ({navigation}) => {
   useEffect(() => {
     GoogleSignin.configure({
       webClientId:
-        '309812336110-bnrk0qf920uan2s2fpk9rac16trgptv2.apps.googleusercontent.com',
+        '609457408230-d9sb13do23gujuopfs3h6vpei46prt5t.apps.googleusercontent.com',
     });
+    requestUserPermission();
   }, []);
+
+  async function requestUserPermission() {
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+    if (enabled) {
+      console.log('Authorization status:', authStatus);
+    }
+  }
+
+  const getToken = async () => {
+    const token = await messaging().getToken();
+    return token;
+  };
+
   const handleLogin = async () => {
     try {
       await GoogleSignin.hasPlayServices();
@@ -35,14 +46,15 @@ const Login = ({navigation}) => {
       let email = userInfo.user.email;
       let name = userInfo.user.name;
       let photo = userInfo.user.photo;
-      const respose = await signup(email, name, photo);
-      console.log(email);
+      let token = await getToken();
+
+      const respose = await signup(email, name, photo, token);
 
       await AsyncStorage.setItem('user-data', JSON.stringify(respose?.data));
       navigation.navigate('Tabs');
     } catch (error) {
       console.log(error);
-      
+
       navigation.navigate('ErrorScreen', {
         error: error.toString(),
       });

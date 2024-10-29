@@ -12,7 +12,7 @@ const BottomSheetUi = ({
   artist,
   Playing,
   index,
-  activeTrack,
+  activeIndex,
   onSelect,
   onPlay,
 }) => {
@@ -21,7 +21,7 @@ const BottomSheetUi = ({
       onPress={onSelect}
       style={[
         styles.parent_item,
-        // index === activeTrack && {backgroundColor: color.modal_baground},
+        // index === activeIndex && {backgroundColor: color.modal_baground},
       ]}>
       <View style={{flexDirection: 'row', overflow: 'hidden'}}>
         <View style={styles.image}>
@@ -51,20 +51,20 @@ const BottomSheetUi = ({
           <Text
             style={[
               styles.song_name,
-              index === activeTrack && {color: '#E7B10A'},
+              index === activeIndex && {color: color.selectSongtitle},
             ]}
             numberOfLines={1}
             ellipsizeMode="tail">
-            {title || 'Unknown'} amet consectetur adipisicing elit.
+            {title || 'Unknown'}
           </Text>
           <Text
-            style={[styles.singer, index === activeTrack && {color: '#ddc98e'}]}
+            style={[
+              styles.singer,
+              index === activeIndex && {color: color.selectSongartist},
+            ]}
             numberOfLines={1}
             ellipsizeMode="tail">
-            {artist || 'Unknown'} Lorem ipsum dolor, sit amet consectetur
-            adipisicing elit. Fugiat eaque necessitatibus optio fugit. Adipisci
-            excepturi veniam eius optio qui ullam vero sed a expedita. In
-            quaerat amet sunt explicabo animi!
+            {artist || 'Unknown'}
           </Text>
         </View>
       </View>

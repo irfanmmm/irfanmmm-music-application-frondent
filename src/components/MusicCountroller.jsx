@@ -2,28 +2,19 @@ import Slider from '@react-native-community/slider';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {hp, responsiveui, wp} from '../styles/responsive';
 import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
-import TrackPlayer, {
-  State,
-  usePlaybackState,
-  useProgress,
-} from 'react-native-track-player';
-import {
-  Pause,
-  Play,
-  Repeat,
-  Shuffle,
-  SkipBack,
-  SkipForward,
-} from 'react-native-feather';
+import TrackPlayer, {useProgress} from 'react-native-track-player';
+import {Repeat, Shuffle, SkipBack, SkipForward} from 'react-native-feather';
 import {color} from '../styles/style';
+import {PlayButton} from './playButtons/PlayButtons';
 
 export const MusicCountroller = ({
   currentIndex,
   handleeClick,
   songDetails,
+  repeateMode,
+  suffleQueelist,
   loading,
 }) => {
-  const songProgressing = usePlaybackState();
   const progress = useProgress();
   return (
     <View>
@@ -56,12 +47,14 @@ export const MusicCountroller = ({
         </View>
       )}
       <View style={styles.controls}>
-        <Shuffle
-          stroke={color.textWhite}
-          width={wp(7)}
-          height={wp(7)}
-          strokeWidth={1.5}
-        />
+        <Pressable onPress={() => handleeClick(0)}>
+          <Shuffle
+            stroke={suffleQueelist ? color.textWhite : color.textMuted}
+            width={wp(7)}
+            height={wp(7)}
+            strokeWidth={1.5}
+          />
+        </Pressable>
         <Pressable onPress={() => handleeClick(1)}>
           <SkipBack
             stroke={currentIndex === 0 ? color.textMuted : color.textWhite}
@@ -72,40 +65,13 @@ export const MusicCountroller = ({
         </Pressable>
         <Pressable
           onPress={() => handleeClick(2)}
-          style={{
-            backgroundColor: color.textWhite,
-            justifyContent: 'center',
-            alignItems: 'center',
-            // padding: wp(3),
-            width: wp(15),
-            height: wp(15),
-            borderRadius: wp(15),
-          }}>
-          {songProgressing.state === State.Playing ? (
-            <Pause
-              stroke={color.background}
-              width={wp(10)}
-              height={wp(10)}
-              strokeWidth={1.5}
-              // fill={color.background}
-            />
-          ) : (
-            <Play
-              stroke={color.background}
-              width={wp(10)}
-              height={wp(10)}
-              fill={color.background}
-              strokeWidth={1}
-              style={{
-                marginLeft: wp(1),
-              }}
-            />
-          )}
+          style={styles.playPauseContainer}>
+          <PlayButton size={wp(10)} bg={color.background} />
         </Pressable>
         <Pressable onPress={() => handleeClick(3)}>
           <SkipForward
             stroke={
-              songDetails.length - 1 === currentIndex
+              songDetails?.length - 1 === currentIndex
                 ? color.textMuted
                 : color.textWhite
             }
@@ -114,12 +80,14 @@ export const MusicCountroller = ({
             strokeWidth={1.5}
           />
         </Pressable>
-        <Repeat
-          stroke={color.textWhite}
-          width={wp(7)}
-          height={wp(7)}
-          strokeWidth={1.5}
-        />
+        <Pressable onPress={() => handleeClick(4)}>
+          <Repeat
+            stroke={repeateMode == 1 ? color.textMuted : color.textWhite}
+            width={wp(7)}
+            height={wp(7)}
+            strokeWidth={1.5}
+          />
+        </Pressable>
       </View>
     </View>
   );
@@ -141,6 +109,14 @@ const styles = StyleSheet.create({
     color: color.textWhite,
     fontSize: responsiveui(0.04),
     fontFamily: 'Nunito-SemiBold',
+  },
+  playPauseContainer: {
+    backgroundColor: color.textWhite,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: wp(15),
+    height: wp(15),
+    borderRadius: wp(15),
   },
   controls: {
     marginVertical: wp(0.5),

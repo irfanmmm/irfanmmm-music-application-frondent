@@ -22,6 +22,7 @@ import BottomSheet, {MAX_TRANSLATE_Y} from '../components/CustomBottomSheet';
 import BottomSheetUi from '../components/BottomSheetUi';
 import TrackPlayer, {
   Event,
+  RepeatMode,
   State,
   useIsPlaying,
   usePlaybackState,
@@ -44,6 +45,7 @@ import Reanimated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
+  withSpring,
 } from 'react-native-reanimated';
 import FastImage from 'react-native-fast-image';
 import {capitalizeFirstLetter} from '../config/capitalizeString';
@@ -63,6 +65,7 @@ import {MusicCountroller} from '../components/MusicCountroller';
 let lastIndex = -1;
 const MusicPlayer = ({navigation}) => {
   const route = useRoute();
+  var {selectedIndex, slectedSong} = route?.params;
 
   const {loading, getAllsongs} = useApiCalls();
   const {playing} = useIsPlaying();
@@ -78,6 +81,7 @@ const MusicPlayer = ({navigation}) => {
   const flatListRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [activeTrack, setActiveTrack] = useState(null);
+  const [repeateMode, setRepeatMode] = useState(false);
   const [ws, setWs] = useState(null);
   const [messages, setMessages] = useState({
     like: false,
@@ -92,7 +96,8 @@ const MusicPlayer = ({navigation}) => {
 
   const handleTrackSelect = async allsongs => {
     await TrackPlayer.reset();
-    await TrackPlayer.add(allsongs);
+    await TrackPlayer.add([slectedSong, ...allsongs]);
+    await TrackPlayer.setQueue(allsongs);
   };
 
   const togglePlayBack = async () => {
@@ -123,26 +128,19 @@ const MusicPlayer = ({navigation}) => {
     }, 500);
   };
 
-  var {selectedIndex} = route?.params;
   useEffect(() => {
     const fetchData = async () => {
-      const queee = await TrackPlayer.getQueue();
-      console.log(selectedIndex);
+      // const queee = await TrackPlayer.getQueue();
+      // if (queee.length > 0) {
+      //   if (selectedIndex && selectedIndex?.toString()?.length > 0) {
+      //     handleScrollToIndex(0, 'scroll');
+      //   } else {
+      //     handleScrollToIndex(0, 'scroll');
+      //   }
 
-      if (queee.length > 0) {
-        if (selectedIndex && selectedIndex?.toString()?.length > 0) {
-          handleScrollToIndex(selectedIndex, 'scroll');
-        } else {
-          handleScrollToIndex(0, 'scroll');
-        }
-
-        setSongDetails(queee);
-
-        return;
-      }
-
+      //   setSongDetails([slectedSong, ...queee]);
+      // }
       const songs = await getAllsongs();
-
       if (songs?.status) {
         const addBeseUrl = songs?.data?.map(item => ({
           ...item,
@@ -150,13 +148,13 @@ const MusicPlayer = ({navigation}) => {
           artwork: BASE_URL + item?.artwork,
         }));
         await handleTrackSelect(addBeseUrl);
-        if (selectedIndex && selectedIndex?.toString()?.length > 0) {
-          handleScrollToIndex(selectedIndex, 'scroll');
+        if (selectedIndex) {
+          handleScrollToIndex(0, 'scroll');
           // isScrollingRef.current = true;
         } else {
           handleScrollToIndex(0, 'scroll');
         }
-        setSongDetails(songs?.data);
+        setSongDetails([slectedSong, ...songs?.data]);
       }
 
       const token = await AsyncStorage.getItem('user-data');
@@ -203,9 +201,6 @@ const MusicPlayer = ({navigation}) => {
       Event.PlaybackActiveTrackChanged,
       async state => {
         if (state.index !== currentIndex) {
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(`track?id=${state?.track?._id}`);
-          }
           const token = await AsyncStorage.getItem('user-data');
           fetch(API_CRIDENTIOLS.GET_SONG + '?id=' + state?.track?._id, {
             headers: {
@@ -249,12 +244,64 @@ const MusicPlayer = ({navigation}) => {
   };
 
   const handleLike = async () => {
-    const currentIndex = await TrackPlayer.getActiveTrackIndex();
+    console.log(ws && ws.readyState === WebSocket.OPEN);
     if (ws && ws.readyState === WebSocket.OPEN) {
       animateLike?.current?.play();
-      ws.send(`like=${!messages?.like}&id=${currentIndex}`);
+      ws.send(`like=${!messages?.like}&id=${activeTrack?._id}`);
     }
   };
+
+  async function handleRepleate() {
+    const currentRepeatMode = await TrackPlayer.getRepeatMode();
+    let newRepeatMode;
+    if (currentRepeatMode === RepeatMode.Off) {
+      newRepeatMode = RepeatMode.Track;
+    } else {
+      newRepeatMode = RepeatMode.Off;
+    }
+    setRepeatMode(currentRepeatMode === 0 ? true : false);
+
+    await TrackPlayer.setRepeatMode(newRepeatMode);
+  }
+
+  function shuffleArray(array) {
+    let currentIndex = array.length,
+      randomIndex;
+
+    // While there remain elements to shuffle...
+    while (currentIndex !== 0) {
+      // Pick a remaining element...
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+
+      // And swap it with the current element.
+      [array[currentIndex], array[randomIndex]] = [
+        array[randomIndex],
+        array[currentIndex],
+      ];
+    }
+
+    return array;
+  }
+
+  async function shuffleQueue() {
+    // Get the current queue
+    const currentQueue = await TrackPlayer.getQueue();
+
+    if (currentQueue.length > 1) {
+      // Shuffle the queue
+      const shuffledQueue = shuffleArray([...currentQueue]);
+
+      // Clear the existing queue
+      await TrackPlayer.reset();
+
+      // Add the shuffled queue back to the player
+      await TrackPlayer.add(shuffledQueue);
+
+      // Optionally start playing the first track of the shuffled queue
+      TrackPlayer.play();
+    }
+  }
 
   const scrollXx = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler({
@@ -283,14 +330,17 @@ const MusicPlayer = ({navigation}) => {
   useEffect(() => {
     TrackPlayer.getActiveTrack().then(track => {
       console.log(track);
-
-      setActiveTrack(track.colors);
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(`track?id=${track?._id}`);
+      }
+      setActiveTrack(track);
     });
-  }, [currentIndex]);
+  }, [currentIndex, ws]);
 
   const handleeClick = index => {
     switch (index) {
       case 0:
+        shuffleQueue();
         break;
       case 1:
         handlePreviousPress();
@@ -302,6 +352,7 @@ const MusicPlayer = ({navigation}) => {
         handleNextPress();
         break;
       case 4:
+        handleRepleate();
         break;
       default:
         break;
@@ -309,20 +360,30 @@ const MusicPlayer = ({navigation}) => {
   };
 
   // starting time y 50 to -20
+  const calculateThumbnailScale = useCallback(
+    currentValue => {
+      const minSlideValue = MAX_TRANSLATE_Y;
+      const maxSlideValue = 0;
+
+      let normalizedValue =
+        (currentValue - minSlideValue) / (maxSlideValue - minSlideValue);
+      const minScale = 0.15;
+      const maxScale = 1;
+
+      return minScale + normalizedValue * (maxScale - minScale);
+    },
+    [MAX_TRANSLATE_Y],
+  );
+
   const handleSlideToHeader = currentValue => {
-    const minSlideValue = MAX_TRANSLATE_Y; // Fully open
-    const maxSlideValue = 0; // Fully closed
-
-    let normalizedValue =
-      (currentValue - minSlideValue) / (maxSlideValue - minSlideValue); // 0.38
-    const minScale = 0.15; // Minimum scale size
-    const maxScale = 1; // Maximum scale size
-
-    thumbnailScale.value = minScale + normalizedValue * (maxScale - minScale); //  0.44
+    thumbnailScale.value = withSpring(calculateThumbnailScale(currentValue), {
+      stiffness: 40,
+    });
   };
 
   const startTranslateY = -wp(15); // -90px + 0.5 (90px - (-90px))
   const endTranslateY = wp(15);
+
   const animatedStyle = useAnimatedStyle(() => {
     const adjustedTranslateY =
       startTranslateY +
@@ -353,7 +414,11 @@ const MusicPlayer = ({navigation}) => {
 
   return (
     <LinearGradient
-      colors={activeTrack ?? [color.bluecolor, color.bagroundcolor]}
+      colors={
+        activeTrack
+          ? activeTrack?.colors
+          : [color.bluecolor, color.bagroundcolor]
+      }
       style={[styles.safeArea]}>
       <Reanimated.View entering={FadeInLeft.duration(1000)}>
         <Reanimated.View
@@ -382,7 +447,7 @@ const MusicPlayer = ({navigation}) => {
                 fontFamily: 'Nunito-ExtraBold',
                 fontSize: responsiveui(0.045),
               }}>
-              Lorem ipsum dolor sit amet consectetur adipisicing elit.
+              {activeTrack?.title}
             </Text>
             <Text
               numberOfLines={1}
@@ -392,7 +457,7 @@ const MusicPlayer = ({navigation}) => {
                 fontFamily: 'Nunito-Medium',
                 fontSize: responsiveui(0.04),
               }}>
-              Lorem ipsum dolor sit amet consectetur adipisicing elit.
+              {activeTrack?.artist}
             </Text>
           </View>
           <Pressable
@@ -523,6 +588,7 @@ const MusicPlayer = ({navigation}) => {
               viewabilityConfig={{
                 viewAreaCoveragePercentThreshold: 50, // Trigger if 50% of an item is visible
               }}
+              // style={{position: 'relative', zIndex: 1000}}
               scrollEventThrottle={16}
               keyExtractor={(item, index) => index.toString()}
               showsHorizontalScrollIndicator={false}
@@ -535,7 +601,11 @@ const MusicPlayer = ({navigation}) => {
               renderItem={({item, index}) => (
                 <TapGestureHandler
                   numberOfTaps={2}
-                  onActivated={() => !ref?.current?.isActive() && handleLike()}>
+                  onActivated={() => {
+                    console.log(!ref?.current?.isActive());
+
+                    !ref?.current?.isActive() && handleLike();
+                  }}>
                   <View style={[styles.thumbnail_container]} key={index}>
                     <Reanimated.View
                       style={[
@@ -575,14 +645,16 @@ const MusicPlayer = ({navigation}) => {
                       />
                     </Reanimated.View>
                     <View style={{marginTop: hp(7)}}>
-                      <TextTicker
+                      <Text
                         style={styles.song_hedding}
-                        duration={10000}
-                        loop
-                        bounce>
+                        numberOfLines={1}
+                        ellipsizeMode="tail">
                         {capitalizeFirstLetter(item?.title)}
-                      </TextTicker>
-                      <Text style={styles.singer}>
+                      </Text>
+                      <Text
+                        style={styles.singer}
+                        numberOfLines={1}
+                        ellipsizeMode="tail">
                         {item?.artist || 'Unknown'}
                       </Text>
                     </View>
@@ -609,7 +681,7 @@ const MusicPlayer = ({navigation}) => {
           loop={false}
           style={{
             position: 'absolute',
-            zIndex: 1,
+            zIndex: 10000,
             left: wp(25),
             top: hp(25),
             height: wp(50),
@@ -625,6 +697,7 @@ const MusicPlayer = ({navigation}) => {
           handleeClick={handleeClick}
           songDetails={songDetails}
           loading={loading}
+          repeateMode={repeateMode}
         />
 
         {state === 'MusicPlayer' && (
@@ -656,9 +729,7 @@ const MusicPlayer = ({navigation}) => {
                 index={index}
                 activeTrack={currentIndex}
                 onSelect={async () => {
-                  // await TrackPlayer.skip(index);
                   handleScrollToIndex(index, 'scroll');
-                  // isScrollingRef.current = true;
                 }}
                 onPlay={() => handleeClick(2)}
               />
@@ -670,7 +741,7 @@ const MusicPlayer = ({navigation}) => {
   );
 };
 
-export default MusicPlayer;
+export default React.memo(MusicPlayer);
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -705,6 +776,7 @@ const styles = StyleSheet.create({
     borderRadius: wp(1),
   },
   song_hedding: {
+    textAlign: 'center',
     color: color.textWhite,
     marginTop: wp(3),
     fontSize: wp(8),

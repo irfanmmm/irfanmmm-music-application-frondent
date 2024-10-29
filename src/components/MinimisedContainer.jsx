@@ -1,47 +1,38 @@
 import {Image, Pressable, StyleSheet, View} from 'react-native';
 import {hp, responsiveui, wp} from '../styles/responsive';
 import Animated, {
-  Easing,
   interpolate,
   runOnJS,
   SlideInDown,
-  SlideInUp,
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
 import {color} from '../styles/style';
-import {useEffect, useState} from 'react';
+import {useEffect} from 'react';
 import TrackPlayer, {
   State,
+  useActiveTrack,
   usePlaybackState,
   useProgress,
 } from 'react-native-track-player';
 import TextTicker from 'react-native-text-ticker';
 import {Pause, Play} from 'react-native-feather';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
-import {useIsFocused, useNavigation} from '@react-navigation/native';
-import {MinimasabeScreen} from '../screens/MinimasabeScreen';
+import {useNavigation} from '@react-navigation/native';
+import {setCurrentTab} from '../config/redux/reducer';
+import {useDispatch} from 'react-redux';
 
-export const MinimisedContainer = ({onBlurScreen}) => {
-  const [isOpen, setIsOpen] = useState(false);
+export const MinimisedContainer = () => {
+  const dispatch = useDispatch();
   const navigation = useNavigation();
-  const animatedvalue = useSharedValue(0);
+  const animatedvalue = useSharedValue(-5);
   const progress = useProgress();
   const songProgressing = usePlaybackState();
-
-  const [activeState, setActiveState] = useState(null);
-  const [activeStateIndex, setActiveStateIndex] = useState(null);
-  const isFocused = useIsFocused();
+  const activeState = useActiveTrack();
 
   useEffect(() => {
-    (async function () {
-      const activeTrack = await TrackPlayer.getActiveTrack();
-      animatedvalue.value = 0;
-      setActiveState(activeTrack);
-      const activeIndex = await TrackPlayer.getActiveTrackIndex();
-      setActiveStateIndex(activeIndex);
-    })();
-  }, [isFocused]);
+    animatedvalue.value = -5;
+  }, [activeState]);
 
   const stopSong = async () => {
     await TrackPlayer.stop();
@@ -59,7 +50,7 @@ export const MinimisedContainer = ({onBlurScreen}) => {
         animatedvalue.value = 500;
         runOnJS(stopSong)();
       } else {
-        animatedvalue.value = 0;
+        animatedvalue.value = -5;
       }
     });
 
@@ -87,12 +78,12 @@ export const MinimisedContainer = ({onBlurScreen}) => {
     }
   };
 
-  const handleNavigateToSongPlayer = boolien => {
-    onBlurScreen(boolien);
-    setIsOpen(boolien);
-    // navigation.navigate('MusicPlayer', {
-    //   selectedIndex: activeStateIndex,
-    // });
+  const handleNavigateToSongPlayer = async () => {
+    const selectedIndex = await TrackPlayer.getActiveTrackIndex();
+    dispatch(setCurrentTab('MusicPlayer'));
+    navigation.navigate('MusicPlayer', {
+      selectedIndex,
+    });
   };
 
   return (
@@ -128,7 +119,7 @@ export const MinimisedContainer = ({onBlurScreen}) => {
                 bounce
                 repeatSpacer={50}
                 marqueeDelay={1000}>
-                {activeState?.title} Lorem ipsum
+                {activeState?.title}
               </TextTicker>
               <TextTicker
                 style={styles.descriptions}
@@ -137,8 +128,7 @@ export const MinimisedContainer = ({onBlurScreen}) => {
                 bounce
                 repeatSpacer={50}
                 marqueeDelay={1000}>
-                {activeState?.title} Lorem ipsum dolor sit amet consectetur
-                adipisicing elit. Dict
+                {activeState?.artist}
               </TextTicker>
             </View>
             <Pressable style={styles.playContainer} onPress={handleTogglePlay}>
@@ -160,6 +150,7 @@ export const MinimisedContainer = ({onBlurScreen}) => {
             <View
               style={{
                 height: '100%',
+                borderRadius: wp(2),
                 width: isNaN(
                   (progress.position / progress?.duration) *
                     (wp(100) - responsiveui(0.05) - wp(2)),
@@ -173,12 +164,6 @@ export const MinimisedContainer = ({onBlurScreen}) => {
           </View>
         </Animated.View>
       </GestureDetector>
-      {isOpen && (
-        <MinimasabeScreen
-          setIsOpen={handleNavigateToSongPlayer}
-          isOpen={isOpen}
-        />
-      )}
     </>
   );
 };
@@ -189,7 +174,7 @@ const styles = StyleSheet.create({
     width: wp(100) - responsiveui(0.05),
     left: (wp(100) - (wp(100) - responsiveui(0.05))) / 2,
     paddingHorizontal: wp(2),
-    backgroundColor: color.textMuted,
+    backgroundColor: '#1E3E62',
     height: wp(18),
     borderRadius: wp(1.5),
     position: 'absolute',
@@ -213,12 +198,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: wp(5),
     fontFamily: 'Nunito-ExtraBold',
-    color: color.primary,
+    color: color.textWhite,
   },
   descriptions: {
     fontSize: wp(3.5),
 
-    color: color.textgrey,
+    color: color.textMuted,
   },
   playContainer: {
     paddingLeft: wp(2),

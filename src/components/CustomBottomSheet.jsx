@@ -84,10 +84,11 @@ const BottomSheet = React.forwardRef(
     return (
       <GestureDetector gesture={gesture}>
         <Animated.View style={[styles.bottomSheetContainer, rBottomSheetStyle]}>
-          {/* <View style={styles.line} /> */}
-          <LinearGradient
-            colors={activeTrack ?? [color.bluecolor, color.bagroundcolor]}
-            style={{flex: 1, backgroundColor: color.bagroundcolor}}>
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: activeTrack?.colors[1] || color.bagroundcolor,
+            }}>
             <View
               style={{
                 borderTopColor: color.textWhite,
@@ -110,8 +111,8 @@ const BottomSheet = React.forwardRef(
               ]}>
               RECENT SONGS
             </Text>
-            {children}
-          </LinearGradient>
+            <View style={{flex: 1}}>{children}</View>
+          </View>
         </Animated.View>
       </GestureDetector>
     );
@@ -122,10 +123,10 @@ const styles = StyleSheet.create({
   bottomSheetContainer: {
     height: SCREEN_HEIGHT,
     width: '100%',
-    // backgroundColor: color.background,
     position: 'absolute',
     top: SCREEN_HEIGHT + hp(10),
     borderRadius: 25,
+    overflow: 'hidden',
   },
   line: {
     width: 75,

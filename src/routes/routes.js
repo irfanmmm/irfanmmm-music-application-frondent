@@ -1,6 +1,6 @@
 import Favorate from '../screens/Favorate';
 import Home from '../screens/Home';
-import MusicPlayer from '../screens/MusicPlayer';
+import PlayerScreen from '../screens/PlayerScreen';
 
 export const TABS_ROUTES = [
     {
@@ -11,7 +11,7 @@ export const TABS_ROUTES = [
     },
     {
       route: 'MusicPlayer',
-      component: MusicPlayer,
+      component: PlayerScreen,
       active: require('../img/headphone_active.png'),
       diactivate: require('../img/headphone.png'),
     },

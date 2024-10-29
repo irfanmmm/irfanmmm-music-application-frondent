@@ -1,26 +1,21 @@
 import React from 'react';
-import {Image, Pressable, StyleSheet, View} from 'react-native';
+import {Image, Pressable, StyleSheet, Text, View} from 'react-native';
 import Animated, {FadeInRight} from 'react-native-reanimated';
 import {color} from '../styles/style';
 import {wp} from '../styles/responsive';
 import {useNavigation} from '@react-navigation/native';
 import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
-import {useDispatch} from 'react-redux';
-import {setCurrentTab} from '../config/redux/reducer';
-import {BASE_URL} from '../config/urls';
 import TextTicker from 'react-native-text-ticker';
 
 export const HomeHoriZontalCard = ({item, index, loading}) => {
   const navigation = useNavigation();
-  const dispatch = useDispatch();
   return (
     <Animated.View
-      entering={FadeInRight.delay(200 * index)}
+      entering={FadeInRight.delay(100 * index)}
       style={styles.recentlyplayd_card_parent}>
       <Pressable
         style={{height: wp(30)}}
         onPress={() => {
-          dispatch(setCurrentTab('MusicPlayer'));
           navigation.navigate('MusicPlayer', {
             slectedSong: item,
             selectedIndex: index,
@@ -34,7 +29,11 @@ export const HomeHoriZontalCard = ({item, index, loading}) => {
           <Image
             resizeMode="cover"
             style={styles.recentlyplayd_card_image}
-            source={{uri: BASE_URL + item?.artwork}}
+            source={
+              item?.artwork
+                ? {uri: item?.artwork}
+                : require('../img/unknown_track.png')
+            }
           />
         )}
         {loading ? (
@@ -51,15 +50,21 @@ export const HomeHoriZontalCard = ({item, index, loading}) => {
             </View>
           </SkeletonPlaceholder>
         ) : (
-          <TextTicker
-            style={styles.recentlyplayd_card_text}
-            duration={10000}
-            loop
-            bounce
-            repeatSpacer={50}
-            marqueeDelay={1000}>
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            style={styles.recentlyplayd_card_text}>
             {item?.title}
-          </TextTicker>
+          </Text>
+          // <TextTicker
+          //   style={styles.recentlyplayd_card_text}
+          //   duration={10000}
+          //   loop
+          //   bounce
+          //   repeatSpacer={50}
+          //   marqueeDelay={1000}>
+          //   {item?.title}
+          // </TextTicker>
         )}
       </Pressable>
     </Animated.View>
@@ -82,7 +87,6 @@ const styles = StyleSheet.create({
     fontSize: wp(4),
     textAlign: 'center',
     color: color.textWhite,
-    marginLeft: wp(8),
     marginTop: wp(2),
     fontFamily: 'Nunito-SemiBold',
   },

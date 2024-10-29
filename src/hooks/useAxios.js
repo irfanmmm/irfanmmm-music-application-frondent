@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
 import axios from 'axios';
 import {useEffect, useRef, useState} from 'react';
+import { API_CRIDENTIOLS } from '../config/urls';
 
 const useAxios = initialConfig => {
   const navigation = useNavigation();
@@ -14,6 +15,8 @@ const useAxios = initialConfig => {
     const requestInterceptor = axios.interceptors.request.use(async request => {
       const token = await AsyncStorage.getItem('user-data');
       if (token) {
+        console.log(token);
+        
         request.headers['Authorization'] = JSON.parse(token);
       }
       return request;
@@ -40,12 +43,17 @@ const useAxios = initialConfig => {
     cancelToken.current = axios.CancelToken.source();
 
     try {
+
+      console.log(config);
+      
       var response = await axios({
         ...initialConfig,
         ...config,
         // timeout: 5000,
-        // cancelToken: cancelToken.current.token,
+        cancelToken: cancelToken.current.token,
       });
+
+      
 
       setData(response.data);
     } catch (err) {
@@ -58,6 +66,7 @@ const useAxios = initialConfig => {
     } finally {
       setLoading(false);
     }
+    
     return response?.data;
   };
 

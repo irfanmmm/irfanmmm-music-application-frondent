@@ -1,4 +1,5 @@
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   Pressable,
@@ -8,7 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {useSafeArea} from 'react-native-safe-area-context';
 import {color} from '../styles/style';
 import {hp, responsiveui, wp} from '../styles/responsive';
@@ -25,6 +26,9 @@ import {shallowEqual, useDispatch, useSelector} from 'react-redux';
 import AroowBack from 'react-native-vector-icons/Ionicons';
 import {useApiCalls} from '../hooks/useApiCalls';
 import {BASE_URL} from '../config/urls';
+import {MinimisedContainer} from '../components/MinimisedContainer';
+import TrackPlayer from 'react-native-track-player';
+import {ArrowLeft} from 'react-native-feather';
 
 const Favorate = ({navigation}) => {
   const insets = useSafeArea();
@@ -45,108 +49,179 @@ const Favorate = ({navigation}) => {
     (async () => {
       const liked = await likedSongs();
 
-      if (!likedSongs?.status) {
+      if (!liked?.status) {
         const response = await getAllsongs();
-        setAllsongs(response?.data);
+        setAllsongs(response);
       } else {
-        setFavorateList(liked?.data);
+        setFavorateList(liked);
       }
     })();
   }, []);
 
-  const data = [
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-  ];
+  const handleNavigate = async (song, index) => {
+    // dispatch(setCurrentTab('MusicPlayer'));
+    // navigation.navigate('MusicPlayer', {
+    //   slectedSong: song,
+    //   selectedIndex: index,
+    // });
 
-  const handleNavigate = (song, index) => {
-    dispatch(setCurrentTab('MusicPlayer'));
-    navigation.navigate('MusicPlayer', {
-      slectedSong: song,
-      selectedIndex: index,
-    });
+    try {
+      await TrackPlayer.skip(index);
+      await TrackPlayer.play();
+    } catch (error) {
+      console.log(error);
+    }
   };
 
+  const MinimisedSheet = useMemo(() => {
+    return <MinimisedContainer />;
+  }, []);
+
+  if (loading)
+    return (
+      <View style={styles.loadingcontainer}>
+        <ActivityIndicator size={'large'} color={color.textWhite} />
+      </View>
+    );
+
   return (
-    <ScrollView
-      style={[
-        styles.safeArea,
-        {paddingTop: insets.top === 0 ? hp(5) : insets.top + hp(2)},
-      ]}
-      showsVerticalScrollIndicator={false}>
-      <Animated.View entering={SlideInLeft} exiting={SlideOutRight}>
-        <Pressable
-          onPress={() => navigation.navigate('Home')}
-          style={styles.hedder}>
-          <AroowBack name="arrow-back" color={color.textWhite} size={wp(7)} />
-        </Pressable>
-        <Animated.View
-          entering={FadeInLeft.delay(200)}
-          style={styles.personal_container}>
-          <Image
-            resizeMode="stretch"
-            style={styles.dp_image}
-            source={{uri: profileDetails?.profile}}
+    <View
+      style={{
+        position: 'relative',
+        flex: 1,
+      }}>
+      <ScrollView
+        style={[
+          styles.safeArea,
+          {paddingTop: insets.top === 0 ? hp(5) : insets.top + hp(2)},
+        ]}
+        showsVerticalScrollIndicator={false}>
+        <Animated.View entering={SlideInLeft} exiting={SlideOutRight}>
+          <Pressable
+            onPress={() => navigation.navigate('Home')}
+            style={styles.hedder}>
+            <ArrowLeft
+              stroke={color.textWhite}
+              width={wp(7)}
+              height={wp(7)}
+              strokeWidth={1.5}
+            />
+          </Pressable>
+          <Animated.View
+            entering={FadeInLeft.delay(200)}
+            style={styles.personal_container}>
+            <Image
+              resizeMode="stretch"
+              style={styles.dp_image}
+              source={{uri: profileDetails?.profile}}
+            />
+            <View style={styles.personal_right_contaienr}>
+              <Text style={styles.usernaem}>{profileDetails?.username}</Text>
+              <Text style={styles.email}>{profileDetails?.email}</Text>
+              <Text style={styles.membership}>Gold Member</Text>
+              <Text style={styles.discription}>
+                Love Music and I am not an Musician.
+              </Text>
+            </View>
+          </Animated.View>
+          <Text style={styles.sub_hedding}>
+            {favorateList?.length > 0 ? 'Favorate Album' : 'Your Album'}
+          </Text>
+          <FlatList
+            scrollEnabled={false}
+            keyExtractor={item => item.toString()}
+            contentContainerStyle={{
+              paddingLeft: responsiveui(0.05),
+              paddingRight: responsiveui(0.05) - responsiveui(0.02),
+            }}
+            numColumns={3}
+            data={favorateList?.length > 0 ? favorateList : allsongs}
+            renderItem={({item, index}) => (
+              <Pressable
+                style={[
+                  {
+                    marginRight: wp(2.5),
+                    marginTop: wp(2.5),
+                  },
+                ]}
+                onPress={() => handleNavigate(item, index)}>
+                <Animated.Image
+                  entering={FadeInDown.delay(200 * index)}
+                  resizeMode="cover"
+                  style={[styles.favorate_song_thumbnail]}
+                  source={
+                    item?.artwork
+                      ? {uri: item?.artwork}
+                      : require('../img/unknown_track.png')
+                  }
+                />
+              </Pressable>
+            )}
           />
-          <View style={styles.personal_right_contaienr}>
-            <Text style={styles.usernaem}>{profileDetails?.username}</Text>
-            <Text style={styles.email}>{profileDetails?.email}</Text>
-            <Text style={styles.membership}>Gold Member</Text>
-            <Text style={styles.discription}>
-              Love Music and I am not an Musician.
-            </Text>
-          </View>
-        </Animated.View>
-        <Text style={styles.sub_hedding}>
-          {favorateList?.length > 0 ? 'Favorate Album' : 'Your Album'}
-        </Text>
-        <FlatList
-          scrollEnabled={false}
-          keyExtractor={item => item.toString()}
-          contentContainerStyle={{
-            paddingLeft: responsiveui(0.05),
-            paddingRight: responsiveui(0.05) - responsiveui(0.02),
-          }}
-          numColumns={3}
-          data={favorateList?.length > 0 ? favorateList : allsongs}
-          renderItem={({item, index}) => (
-            <Pressable
-              style={[
-                {
-                  marginRight: wp(2.5),
-                  marginTop: wp(2.5),
-                },
-              ]}
-              onPress={() => handleNavigate(item, index)}>
-              <Animated.Image
-                entering={FadeInDown.delay(200 * index)}
-                resizeMode="cover"
-                style={[styles.favorate_song_thumbnail]}
-                source={
-                  item?.artwork
-                    ? {uri: BASE_URL + item?.artwork}
-                    : require('../img/unknown_track.png')
-                }
+
+          {favorateList?.length < 10 && (
+            <>
+              <Text style={styles.sub_hedding}>Recommended for you</Text>
+              <FlatList
+                scrollEnabled={false}
+                keyExtractor={item => item.toString()}
+                contentContainerStyle={{
+                  paddingLeft: responsiveui(0.05),
+                  paddingRight: responsiveui(0.05) - responsiveui(0.02),
+                }}
+                numColumns={3}
+                data={allsongs}
+                renderItem={({item, index}) => (
+                  <Pressable
+                    style={[
+                      {
+                        marginRight: wp(2.5),
+                        marginTop: wp(2.5),
+                      },
+                    ]}
+                    onPress={() => handleNavigate(item, index)}>
+                    <Animated.Image
+                      entering={FadeInDown.delay(200 * index)}
+                      resizeMode="cover"
+                      style={[styles.favorate_song_thumbnail]}
+                      source={
+                        item?.artwork
+                          ? {uri: item?.artwork}
+                          : require('../img/unknown_track.png')
+                      }
+                    />
+                  </Pressable>
+                )}
               />
-            </Pressable>
+            </>
           )}
-        />
-      </Animated.View>
-    </ScrollView>
+        </Animated.View>
+      </ScrollView>
+      {MinimisedSheet}
+    </View>
   );
 };
 
 export default Favorate;
 
 const styles = StyleSheet.create({
+  loadingcontainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: color.bottomsheet_color,
+  },
   safeArea: {
     flex: 1,
     backgroundColor: color.bagroundcolor,
     // paddingBottom:
+    paddingBottom: hp(4.5) + wp(4),
   },
   hedder: {
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
     paddingLeft: responsiveui(0.05),
+    marginTop: hp(2),
   },
   personal_container: {
     paddingHorizontal: responsiveui(0.1),

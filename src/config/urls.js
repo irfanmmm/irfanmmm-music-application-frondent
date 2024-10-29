@@ -1,8 +1,8 @@
-export const URL_WEBSOCKET = 'ws://10.25.25.104:3000';
-export const BASE_URL = 'http:/10.25.25.104:3000';
+export const URL_WEBSOCKET = 'ws://192.168.135.179:3000';
+export const BASE_URL = 'http://192.168.135.179:3000';
 
 export const API_CRIDENTIOLS = {
-  HEALTH:BASE_URL + '/health',
+  HEALTH: BASE_URL + '/health',
   LOGIN: BASE_URL + '/signup',
   PROFILE: BASE_URL + '/userdetails',
   SONG_DETAILS: BASE_URL + '/getallsongdeatils',

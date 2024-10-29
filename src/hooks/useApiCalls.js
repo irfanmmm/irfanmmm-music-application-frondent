@@ -1,4 +1,4 @@
-import {API_CRIDENTIOLS} from '../config/urls';
+import {API_CRIDENTIOLS, BASE_URL} from '../config/urls';
 import {useAxios} from './useAxios';
 
 export const useApiCalls = () => {
@@ -11,7 +11,7 @@ export const useApiCalls = () => {
     return response;
   };
 
-  const signup = async (email, name, photo) => {
+  const signup = async (email, name, photo, token) => {
     const response = await fetchData({
       url: API_CRIDENTIOLS.LOGIN,
       method: 'POST',
@@ -19,6 +19,7 @@ export const useApiCalls = () => {
         email: email,
         profile: photo,
         username: name,
+        notificationid: token,
       },
     });
     return response;
@@ -31,11 +32,28 @@ export const useApiCalls = () => {
     return response;
   };
 
-  const getAllsongs = async () => {
+  const getAllsongs = async ({count, pageSize}) => {
     const response = await fetchData({
       url: API_CRIDENTIOLS.SONG_DETAILS,
+      method: 'POST',
+      data: {
+        count, // Example value, replace with your actual data
+        pageSize, // Example value, replace with your actual data
+      },
     });
-    return response;
+
+    if (response?.status) {
+      return {
+        songs: response?.data?.map(detai => ({
+          ...detai,
+          artwork: BASE_URL + detai?.artwork,
+          url: BASE_URL + detai?.url,
+        })),
+        pagination: response.pagination,
+      };
+    }
+
+    return {songs: response, pagination: response.pagination};
   };
 
   const getSong = async id => {
@@ -61,6 +79,14 @@ export const useApiCalls = () => {
     const response = await fetchData({
       url: API_CRIDENTIOLS.LIKED_SONGS,
     });
+
+    if (response?.status) {
+      return response?.data?.map(detai => ({
+        ...detai,
+        artwork: BASE_URL + detai?.artwork,
+        url: BASE_URL + detai?.url,
+      }));
+    }
     return response;
   };
 
@@ -68,6 +94,13 @@ export const useApiCalls = () => {
     const response = await fetchData({
       url: API_CRIDENTIOLS.RECENT,
     });
+    if (response?.status) {
+      return response?.data?.map(detai => ({
+        ...detai,
+        artwork: BASE_URL + detai?.artwork,
+        url: BASE_URL + detai?.url,
+      }));
+    }
     return response;
   };
 
