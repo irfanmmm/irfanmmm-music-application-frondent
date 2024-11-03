@@ -32,7 +32,13 @@ export const MinimisedContainer = () => {
 
   useEffect(() => {
     animatedvalue.value = -5;
-  }, [activeState]);
+  }, []);
+
+  useEffect(() => {
+    if (songProgressing.state === 'playing') {
+      animatedvalue.value = -5;
+    }
+  }, [songProgressing]);
 
   const stopSong = async () => {
     await TrackPlayer.stop();
@@ -80,9 +86,11 @@ export const MinimisedContainer = () => {
 
   const handleNavigateToSongPlayer = async () => {
     const selectedIndex = await TrackPlayer.getActiveTrackIndex();
-    dispatch(setCurrentTab('MusicPlayer'));
+    console.log(selectedIndex);
+
+    // dispatch(setCurrentTab('MusicPlayer'));
     navigation.navigate('MusicPlayer', {
-      selectedIndex,
+      propsIndex: selectedIndex.toString(),
     });
   };
 

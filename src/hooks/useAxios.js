@@ -15,8 +15,6 @@ const useAxios = initialConfig => {
     const requestInterceptor = axios.interceptors.request.use(async request => {
       const token = await AsyncStorage.getItem('user-data');
       if (token) {
-        console.log(token);
-        
         request.headers['Authorization'] = JSON.parse(token);
       }
       return request;
@@ -44,20 +42,19 @@ const useAxios = initialConfig => {
 
     try {
 
-      console.log(config);
       
       var response = await axios({
         ...initialConfig,
         ...config,
         // timeout: 5000,
-        cancelToken: cancelToken.current.token,
+        // cancelToken: cancelToken.current.token,
       });
 
       
 
       setData(response.data);
     } catch (err) {
-      console.log(err);
+
 
       // if (err?.response?.status === 401) {
       removeSession();

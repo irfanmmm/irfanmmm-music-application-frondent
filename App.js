@@ -4,8 +4,12 @@ import store from './src/config/redux/store';
 import StackNavigator from './src/routes/StackNavigator';
 import PushNotification from 'react-native-push-notification';
 import messaging from '@react-native-firebase/messaging';
+import { useSetupTrackPlayer } from './src/trackplayer/useSetupTrackPlayer';
 
 const App = () => {
+  useSetupTrackPlayer({
+    onLoad: () => {},
+  });
   // App.js or index.js
   useEffect(() => {
     // Background message handler

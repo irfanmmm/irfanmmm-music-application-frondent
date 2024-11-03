@@ -9,7 +9,7 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import {color} from '../styles/style';
 import {hp, responsiveui, wp} from '../styles/responsive';
-import {useCallback, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {useAnimatedStyle, useSharedValue} from 'react-native-reanimated';
 import Reanimated from 'react-native-reanimated';
 import {ChevronUp} from 'react-native-feather';
@@ -28,8 +28,10 @@ import TrackPlayer, {
   useTrackPlayerEvents,
 } from 'react-native-track-player';
 import {PlayerHeadder} from '../components/playerScreenComponent/PlayerScreenHedder';
+import {useRoute} from '@react-navigation/native';
 
 const PlayerScreen = () => {
+  const router = useRoute();
   const [activeIndex, setActiveIndex] = useState(0);
   const [repeateMode, setRepeatMode] = useState(false);
   const playbackstate = useIsPlaying();
@@ -37,8 +39,10 @@ const PlayerScreen = () => {
   const animateLike = useRef(null);
   const flatListRef = useRef(null);
   const isButtonPress = useRef(false);
-  const {queelists, suffleQueelist, setSuffleQueelist} = useQueue();
+  const {suffleQueelist, setSuffleQueelist} = useQueue();
+  const [queelists, setQueelist] = useState(null);
   const thumbnailScale = useSharedValue(1);
+
   const playerHeaderRef = useRef(null);
   const startTranslateY = -wp(15);
   const endTranslateY = wp(15);
@@ -89,8 +93,21 @@ const PlayerScreen = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const fetchQueue = async () => {
+      const songs = await TrackPlayer.getQueue();
+      console.log(songs);
+      
+      setQueelist(songs);
+      setActiveIndex(parseInt(router?.params?.propsIndex) || 0);
+    };
+    fetchQueue();
+  }, [router?.params]);
+
   useTrackPlayerEvents([Event.PlaybackTrackChanged], async () => {
     const newTrackIndex = await TrackPlayer.getCurrentTrack();
+    console.log(newTrackIndex, 'active track index-------');
+
     if (newTrackIndex !== null && newTrackIndex !== activeIndex) {
       setActiveIndex(newTrackIndex);
       isButtonPress.current = true;

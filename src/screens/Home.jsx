@@ -1,7 +1,5 @@
 import {
   FlatList,
-  Image,
-  ScrollView,
   StyleSheet,
   Text,
   Animated,
@@ -16,50 +14,38 @@ import {hp, responsiveui, wp} from '../styles/responsive';
 import {HomeCard} from '../components/HomeCard';
 import {HomeHoriZontalCard} from '../components/HomeHoriZontalCard';
 import {useApiCalls} from '../hooks/useApiCalls';
-import {setProfile} from '../config/redux/reducer';
-import {useDispatch} from 'react-redux';
-import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import {useSetupTrackPlayer} from '../trackplayer/useSetupTrackPlayer';
 import {MinimisedContainer} from '../components/MinimisedContainer';
-import TrackPlayer from 'react-native-track-player';
+import TrackPlayer, {usePlaybackState} from 'react-native-track-player';
 import {useAddSongs} from '../hooks/useAudio';
 import {Hedder} from '../components/homeComponent/HomeHeadder';
 import {SearchContainer} from '../components/homeComponent/HomeSearchContainer';
 import {EmptyList} from '../components/homeComponent/ListEmptyComponent';
-import {CardSkelton} from '../components/homeComponent/CardSkelton';
-import {Loader} from 'react-native-feather';
 
 const Home = () => {
-  useSetupTrackPlayer({
-    onLoad: () => {},
-  });
-  const dispatch = useDispatch();
-  const {getProfileDetails, loading, getAllsongs, recentsongs} = useApiCalls();
-  const {setAddNewSongs} = useAddSongs();
+  const {loading, getAllsongs, recentsongs} = useApiCalls();
+  const {setAddNewSongs, currentQueelist} = useAddSongs();
   const scrollY = new Animated.Value(0);
   const [songsDetails, setSongDetails] = useState([]);
   const [searchSongsDetails, setSearchSongDetails] = useState(null);
   const [activeInput, setActiveInput] = useState(false);
   const [rececntSongs, setRececntSongs] = useState([]);
   const [currentPaginationStatus, setCurrentPaginationStatus] = useState(null);
+  const songProgressing = usePlaybackState();
 
   useEffect(() => {
     (async () => {
-      const response = await getProfileDetails();
       const {songs, pagination} = await getAllsongs({
         count: 1,
         pageSize: 10,
       });
 
-      setAddNewSongs(prev => [...prev, ...songs]);
-      setSongDetails(prev => [...prev, ...songs]);
+      setAddNewSongs(songs?.slice(0, 8));
+      setSongDetails(songs);
       setCurrentPaginationStatus(pagination);
 
       const recent = await recentsongs();
       setRececntSongs(recent);
-
-      dispatch(setProfile(response));
     })();
 
     BackHandler.addEventListener('hardwareBackPress', () => {
@@ -74,11 +60,37 @@ const Home = () => {
     };
   }, []);
 
-  const handleeClick = async (item, index) => {
+  const handleeClick = async (song, _) => {
     try {
-      await TrackPlayer.skip(index);
-      await TrackPlayer.play();
-    } catch (error) {}
+      const queelist = await TrackPlayer.getQueue();
+      if (queelist.find(quee => quee.url === song.url)) {
+        let newindex = queelist.findIndex(track => track.url === song.url);
+        await TrackPlayer.move(newindex, 0);
+
+        if (newindex === -1) return;
+
+        await TrackPlayer.skip(0);
+        await TrackPlayer.play();
+      } else {
+        await TrackPlayer.reset();
+        let newAddSongList = [song, ...queelist];
+        newAddSongList = Array.from(
+          new Map(newAddSongList.map(item => [item?._id, item])).values(),
+        );
+        await TrackPlayer.add(newAddSongList);
+        let newQueelist = await TrackPlayer.getQueue();
+        let newindex = newQueelist.findIndex(track => track.url === song.url);
+        if (newindex === -1) return;
+        await TrackPlayer.skip(newindex);
+        await TrackPlayer.play();
+
+        // remove maximum number of songs
+        if (newAddSongList.length <= 8) return;
+        await TrackPlayer.remove([1]);
+      }
+    } catch (error) {
+      console.log('song not existed in quee list', error);
+    }
   };
 
   const handleeClickSearchIcon = () => {
@@ -90,21 +102,24 @@ const Home = () => {
   }, []);
 
   const handleEndReached = async () => {
-    if (currentPaginationStatus.totalPages === currentPaginationStatus.page)
+    if (currentPaginationStatus?.page === currentPaginationStatus?.totalPages)
       return;
 
     const {songs, pagination} = await getAllsongs({
       count: currentPaginationStatus?.page + 1, // {"page": 1, "pageSize": 10, "totalCount": 50, "totalPages": 5}
-      pageSize: currentPaginationStatus?.pageSize + 10,
+      pageSize: 10,
     });
-    setSongDetails(songs);
-    setAddNewSongs(songs);
+    setSongDetails(prevstate => [...prevstate, ...songs]);
     setCurrentPaginationStatus(pagination);
+
+    if (songProgressing.state !== 'playing') {
+      setAddNewSongs(prevstate => [...songs, ...prevstate]);
+    }
   };
 
   return (
     <View style={styles.safeArea}>
-      <Hedder scrollY={scrollY} loading={loading} activeInput={activeInput} />
+      <Hedder scrollY={scrollY} activeInput={activeInput} />
       {activeInput && (
         <SearchContainer
           active={event => {
@@ -154,7 +169,7 @@ const Home = () => {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{paddingLeft: responsiveui(0.05)}}
                     data={rececntSongs}
-                    keyExtractor={(item, index) => index?.toString()}
+                    keyExtractor={(_, index) => index?.toString()}
                     renderItem={({item, index}) => (
                       <HomeHoriZontalCard
                         loading={loading}
@@ -175,12 +190,14 @@ const Home = () => {
           flex: 1,
         }}
         ListFooterComponentStyle={{
-          height: hp(10),
+          height: loading && songsDetails ? hp(10) : hp(2),
         }}
-        ListFooterComponent={() => (
-          <ActivityIndicator size={'large'} color={color.textWhite} />
-        )}
-        ListEmptyComponent={() => <EmptyList />}
+        ListFooterComponent={() =>
+          loading && songsDetails ? (
+            <ActivityIndicator size={'large'} color={color.textWhite} />
+          ) : null
+        }
+        ListEmptyComponent={() => (!loading ? <EmptyList /> : null)}
         renderItem={({index, item}) => (
           <HomeCard onPress={handleeClick} index={index} item={item} />
         )}

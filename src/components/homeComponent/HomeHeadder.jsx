@@ -2,24 +2,30 @@ import {Animated, Image, StyleSheet, View, Text} from 'react-native';
 import {useSafeArea} from 'react-native-safe-area-context';
 import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 import {Bell} from 'react-native-feather';
-import {shallowEqual, useSelector} from 'react-redux';
+import {shallowEqual, useDispatch, useSelector} from 'react-redux';
 import {hp, responsiveui, wp} from '../../styles/responsive';
 import {color} from './../../styles/style';
+import {useEffect, useState} from 'react';
+import {useApiCalls} from '../../hooks/useApiCalls';
+import {setProfile} from '../../config/redux/reducer';
 
-export const Hedder = ({activeInput, scrollY, loading}) => {
+export const Hedder = ({activeInput, scrollY}) => {
   const insets = useSafeArea();
-
+  const {loading, getProfileDetails} = useApiCalls();
+  const dispatch = useDispatch();
+  const [profileDetails, setProfileDetails] = useState(null);
   const diffClamp = Animated.diffClamp(scrollY, 0, hp(15));
   const animatedStyle = diffClamp.interpolate({
     inputRange: [0, hp(15)],
     outputRange: [0, -hp(15)],
   });
-  const state = useSelector(
-    state => ({
-      profileDetails: state.store.profiledetails,
-    }),
-    shallowEqual,
-  );
+
+  useEffect(() => {
+    getProfileDetails().then(response => {
+      setProfileDetails(response);
+      dispatch(setProfile(response));
+    });
+  }, []);
 
   return (
     <Animated.View
@@ -47,13 +53,13 @@ export const Hedder = ({activeInput, scrollY, loading}) => {
         <>
           <Image
             resizeMode={'cover'}
-            source={{uri: state?.profileDetails?.profile}}
+            source={{uri: profileDetails?.profile}}
             style={styles.profid}
           />
           <View style={styles.hedder_center}>
             <Text style={styles.name_person}>
-              {state.profileDetails?.username
-                ? state.profileDetails.username
+              {profileDetails?.username
+                ? profileDetails?.username
                 : 'Sarwar Jahan'}
             </Text>
             <Text style={styles.hedder_discription}>Gold Member</Text>

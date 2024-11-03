@@ -6,7 +6,7 @@ import {responsiveui, wp} from '../styles/responsive';
 
 export const HomeCard = ({item, index, onPress}) => {
   return (
-    <Animated.View entering={FadeInDown.delay(100 * index)}>
+    <Animated.View entering={FadeInDown.delay(10 * index)}>
       <Pressable
         style={styles.recomonded_card_parent}
         onPress={() => {
