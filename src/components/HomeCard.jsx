@@ -1,26 +1,55 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
-import Animated, {FadeInDown} from 'react-native-reanimated';
 import {color} from '../styles/style';
 import {responsiveui, wp} from '../styles/responsive';
+import FastImage from 'react-native-fast-image';
+import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 
 export const HomeCard = ({item, index, onPress}) => {
+  const [loading, setLoading] = useState(true);
+  
   return (
-    <Animated.View entering={FadeInDown.delay(10 * index)}>
+    <View>
       <Pressable
         style={styles.recomonded_card_parent}
         onPress={() => {
           onPress(item, index);
         }}>
-        <Animated.Image
-          resizeMode="cover"
-          style={styles.recomonded_card_image}
-          source={
-            item?.artwork
-              ? {uri: item?.artwork}
-              : require('../img/unknown_track.png')
-          }
-        />
+        <View style={styles.recomonded_card_image}>
+          <FastImage
+            style={{
+              width: '100%',
+              height: '100%',
+              borderRadius: wp(1),
+            }}
+            onLoadEnd={() => {
+              setLoading(false);
+            }}
+            resizeMode={FastImage.resizeMode.contain}
+            source={
+              item?.artwork
+                ? {
+                    uri: item?.artwork,
+                    priority: FastImage.priority.high,
+                  }
+                : require('../img/unknown_track.png')
+            }
+          />
+          {loading && (
+            <FastImage
+              style={{
+                width: '100%',
+                height: '100%',
+                borderRadius: wp(1),
+              }}
+              onLoadEnd={() => {
+                setLoading(false);
+              }}
+              resizeMode={FastImage.resizeMode.contain}
+              source={require('../img/unknown_track.png')}
+            />
+          )}
+        </View>
         <View style={styles.recomonded_card_right}>
           <Text
             numberOfLines={1}
@@ -35,11 +64,11 @@ export const HomeCard = ({item, index, onPress}) => {
             {item.artist ?? 'unknown'}
           </Text>
           <Text style={styles.recomonded_card_text2}>
-            {item?.rating ?? 0}/likes
+            {item?.like ?? 0}/likes
           </Text>
         </View>
       </Pressable>
-    </Animated.View>
+    </View>
   );
 };
 
@@ -55,7 +84,8 @@ const styles = StyleSheet.create({
     width: responsiveui(0.28),
     height: responsiveui(0.28),
     marginRight: responsiveui(0.04),
-    borderRadius: wp(1),
+    position: 'relative',
+
     elevation: 100,
   },
   recomonded_card_right: {

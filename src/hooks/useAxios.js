@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
 import axios from 'axios';
 import {useEffect, useRef, useState} from 'react';
-import { API_CRIDENTIOLS } from '../config/urls';
+import {API_CRIDENTIOLS} from '../config/urls';
 
 const useAxios = initialConfig => {
   const navigation = useNavigation();
@@ -41,8 +41,6 @@ const useAxios = initialConfig => {
     cancelToken.current = axios.CancelToken.source();
 
     try {
-
-      
       var response = await axios({
         ...initialConfig,
         ...config,
@@ -50,20 +48,16 @@ const useAxios = initialConfig => {
         // cancelToken: cancelToken.current.token,
       });
 
-      
-
       setData(response.data);
     } catch (err) {
-
-
-      // if (err?.response?.status === 401) {
-      removeSession();
-      // }
+      if (err?.response?.status === 401) {
+        removeSession();
+      }
       setError(err);
     } finally {
       setLoading(false);
     }
-    
+
     return response?.data;
   };
 

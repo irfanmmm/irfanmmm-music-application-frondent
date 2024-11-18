@@ -24,9 +24,9 @@ import {EmptyList} from '../components/homeComponent/ListEmptyComponent';
 
 const Home = () => {
   const {loading, getAllsongs, recentsongs} = useApiCalls();
-  const {setAddNewSongs, currentQueelist} = useAddSongs();
+  const {setAddNewSongs} = useAddSongs();
   const scrollY = new Animated.Value(0);
-  const [songsDetails, setSongDetails] = useState([]);
+  const [songsDetails, setSongDetails] = useState(null);
   const [searchSongsDetails, setSearchSongDetails] = useState(null);
   const [activeInput, setActiveInput] = useState(false);
   const [rececntSongs, setRececntSongs] = useState([]);
@@ -40,27 +40,36 @@ const Home = () => {
         pageSize: 10,
       });
 
-      setAddNewSongs(songs?.slice(0, 8));
       setSongDetails(songs);
       setCurrentPaginationStatus(pagination);
-
       const recent = await recentsongs();
       setRececntSongs(recent);
+
+      const previuseQuee = await TrackPlayer.getQueue();
+
+      console.log(previuseQuee);
+      
+      if (previuseQuee.length > 0) return;
+      setAddNewSongs(songs?.slice(0, 8));
     })();
 
     BackHandler.addEventListener('hardwareBackPress', () => {
-      TrackPlayer.reset();
       BackHandler.exitApp();
       return true;
     });
 
     return () => {
-      TrackPlayer.reset();
       BackHandler.removeEventListener('hardwareBackPress');
     };
   }, []);
 
   const handleeClick = async (song, _) => {
+    if (
+      songProgressing.state === 'loading' ||
+      songProgressing.state === 'buffering'
+    )
+      return;
+
     try {
       const queelist = await TrackPlayer.getQueue();
       if (queelist.find(quee => quee.url === song.url)) {
@@ -84,9 +93,18 @@ const Home = () => {
         await TrackPlayer.skip(newindex);
         await TrackPlayer.play();
 
-        // remove maximum number of songs
-        if (newAddSongList.length <= 8) return;
-        await TrackPlayer.remove([1]);
+        if (newAddSongList?.length > 8) {
+          const removableIndexes = newAddSongList.slice(
+            8,
+            newAddSongList.length,
+          );
+          await TrackPlayer.remove(
+            Array.from(
+              {length: removableIndexes.length - 8},
+              (_, index) => removableIndexes.length - index,
+            ),
+          );
+        }
       }
     } catch (error) {
       console.log('song not existed in quee list', error);
@@ -111,11 +129,14 @@ const Home = () => {
     });
     setSongDetails(prevstate => [...prevstate, ...songs]);
     setCurrentPaginationStatus(pagination);
-
-    if (songProgressing.state !== 'playing') {
-      setAddNewSongs(prevstate => [...songs, ...prevstate]);
-    }
   };
+
+  if (!songsDetails)
+    return (
+      <View style={styles.loadingcontainer}>
+        <ActivityIndicator size={'large'} color={color.textWhite} />
+      </View>
+    );
 
   return (
     <View style={styles.safeArea}>
@@ -123,6 +144,9 @@ const Home = () => {
       {activeInput && (
         <SearchContainer
           active={event => {
+            if (!event) {
+              setSearchSongDetails(null);
+            }
             setActiveInput(event);
           }}
           activeInput={activeInput}
@@ -211,6 +235,12 @@ const Home = () => {
 export default Home;
 
 const styles = StyleSheet.create({
+  loadingcontainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: color.bottomsheet_color,
+  },
   safeArea: {
     flex: 1,
     backgroundColor: color.bagroundcolor,

@@ -5,6 +5,7 @@ import Animated, {
   Extrapolate,
   interpolate,
   runOnJS,
+  runOnUI,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -69,15 +70,17 @@ const BottomSheet = React.forwardRef(
         [25, 5],
         Extrapolate.CLAMP,
       );
-
-      // Call the currentPosition function with the translated value
       if (currentPosition && typeof currentPosition === 'function') {
         runOnJS(currentPosition)(translateY.value);
       }
 
+      // Call the currentPosition function with the translated value
+
       return {
+        
         borderRadius,
-        transform: [{translateY: translateY.value}],
+        transform: [{
+          translateY: translateY.value}],
       };
     });
 

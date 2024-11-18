@@ -4,7 +4,6 @@ import {
   Image,
   Pressable,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   View,
@@ -17,22 +16,19 @@ import Animated, {
   FadeInDown,
   FadeInLeft,
   SlideInLeft,
-  SlideInRight,
-  SlideOutLeft,
   SlideOutRight,
 } from 'react-native-reanimated';
-import {setCurrentTab} from '../config/redux/reducer';
 import {shallowEqual, useDispatch, useSelector} from 'react-redux';
-import AroowBack from 'react-native-vector-icons/Ionicons';
 import {useApiCalls} from '../hooks/useApiCalls';
-import {BASE_URL} from '../config/urls';
 import {MinimisedContainer} from '../components/MinimisedContainer';
 import TrackPlayer from 'react-native-track-player';
 import {ArrowLeft} from 'react-native-feather';
+import FastImage from 'react-native-fast-image';
+import {useIsFocused} from '@react-navigation/native';
 
 const Favorate = ({navigation}) => {
   const insets = useSafeArea();
-  const dispatch = useDispatch();
+  const isFocused = useIsFocused();
 
   const {loading, getAllsongs, likedSongs} = useApiCalls();
   const {profileDetails} = useSelector(
@@ -41,6 +37,7 @@ const Favorate = ({navigation}) => {
     }),
     shallowEqual,
   );
+  const [imageLoading, setImageLoading] = useState(true);
 
   const [favorateList, setFavorateList] = useState([]);
   const [allsongs, setAllsongs] = useState([]);
@@ -48,23 +45,16 @@ const Favorate = ({navigation}) => {
   useEffect(() => {
     (async () => {
       const liked = await likedSongs();
-
-      if (!liked?.status) {
-        const response = await getAllsongs();
-        setAllsongs(response);
-      } else {
-        setFavorateList(liked);
-      }
+      setFavorateList(liked);
+      const response = await getAllsongs({
+        count: 1,
+        pageSize: 10,
+      });
+      setAllsongs(response.songs);
     })();
-  }, []);
+  }, [isFocused]);
 
-  const handleNavigate = async (song, index) => {
-    // dispatch(setCurrentTab('MusicPlayer'));
-    // navigation.navigate('MusicPlayer', {
-    //   slectedSong: song,
-    //   selectedIndex: index,
-    // });
-
+  const handleNavigate = async (_, index) => {
     try {
       await TrackPlayer.skip(index);
       await TrackPlayer.play();
@@ -73,16 +63,21 @@ const Favorate = ({navigation}) => {
     }
   };
 
+  
   const MinimisedSheet = useMemo(() => {
     return <MinimisedContainer />;
   }, []);
-
+  
   if (loading)
     return (
       <View style={styles.loadingcontainer}>
         <ActivityIndicator size={'large'} color={color.textWhite} />
+        {MinimisedSheet}
       </View>
     );
+
+  
+
 
   return (
     <View
@@ -142,6 +137,15 @@ const Favorate = ({navigation}) => {
                   {
                     marginRight: wp(2.5),
                     marginTop: wp(2.5),
+                    marginBottom:
+                      favorateList?.length > 0 &&
+                      favorateList.length - 1 === index &&
+                      favorateList?.length < !10
+                        ? hp(20)
+                        : allsongs.length - 1 === index &&
+                          favorateList?.length < !10
+                        ? hp(20)
+                        : 0,
                   },
                 ]}
                 onPress={() => handleNavigate(item, index)}>
@@ -149,12 +153,27 @@ const Favorate = ({navigation}) => {
                   entering={FadeInDown.delay(200 * index)}
                   resizeMode="cover"
                   style={[styles.favorate_song_thumbnail]}
+                  onLoadEnd={() => {
+                    setImageLoading(false);
+                  }}
                   source={
                     item?.artwork
                       ? {uri: item?.artwork}
                       : require('../img/unknown_track.png')
                   }
                 />
+
+                {imageLoading && (
+                  <FastImage
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: wp(1),
+                    }}
+                    resizeMode={FastImage.resizeMode.contain}
+                    source={require('../img/unknown_track.png')}
+                  />
+                )}
               </Pressable>
             )}
           />
@@ -177,6 +196,8 @@ const Favorate = ({navigation}) => {
                       {
                         marginRight: wp(2.5),
                         marginTop: wp(2.5),
+                        marginBottom:
+                          allsongs?.length - 1 === index ? hp(20) : 0,
                       },
                     ]}
                     onPress={() => handleNavigate(item, index)}>

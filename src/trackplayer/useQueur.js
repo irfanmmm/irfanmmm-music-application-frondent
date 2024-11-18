@@ -1,11 +1,10 @@
-import {useRoute} from '@react-navigation/native';
 import {useEffect, useState} from 'react';
 import TrackPlayer, {Event} from 'react-native-track-player';
 
 export const useQueue = () => {
   const [suffleQueelist, setSuffleQueelist] = useState(false);
   const [queelists, setQueelist] = useState(null);
-  const router = useRoute();
+
 
   useEffect(() => {
     const fetchQueue = async () => {
@@ -37,7 +36,7 @@ export const useQueue = () => {
     return () => {
       TrackPlayer.remove();
     };
-  }, [suffleQueelist, router?.params?.propsIndex]);
+  }, [suffleQueelist]);
 
-  return {queelists, suffleQueelist, setSuffleQueelist};
+  return {queelists, suffleQueelist,setQueelist, setSuffleQueelist};
 };

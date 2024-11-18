@@ -1,4 +1,10 @@
-import {Image, Pressable, StyleSheet, View} from 'react-native';
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  View,
+  ActivityIndicator,
+} from 'react-native';
 import {hp, responsiveui, wp} from '../styles/responsive';
 import Animated, {
   interpolate,
@@ -19,16 +25,14 @@ import TextTicker from 'react-native-text-ticker';
 import {Pause, Play} from 'react-native-feather';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import {useNavigation} from '@react-navigation/native';
-import {setCurrentTab} from '../config/redux/reducer';
-import {useDispatch} from 'react-redux';
+import FastImage from 'react-native-fast-image';
 
 export const MinimisedContainer = () => {
-  const dispatch = useDispatch();
   const navigation = useNavigation();
   const animatedvalue = useSharedValue(-5);
-  const progress = useProgress();
   const songProgressing = usePlaybackState();
   const activeState = useActiveTrack();
+  const progress = useProgress();
 
   useEffect(() => {
     animatedvalue.value = -5;
@@ -41,7 +45,7 @@ export const MinimisedContainer = () => {
   }, [songProgressing]);
 
   const stopSong = async () => {
-    await TrackPlayer.stop();
+    await TrackPlayer.pause();
   };
 
   const gesture = Gesture.Pan()
@@ -86,93 +90,102 @@ export const MinimisedContainer = () => {
 
   const handleNavigateToSongPlayer = async () => {
     const selectedIndex = await TrackPlayer.getActiveTrackIndex();
-    console.log(selectedIndex);
-
-    // dispatch(setCurrentTab('MusicPlayer'));
     navigation.navigate('MusicPlayer', {
       propsIndex: selectedIndex.toString(),
     });
   };
 
   return (
-    <>
-      <GestureDetector gesture={gesture}>
-        <Animated.View
-          entering={SlideInDown.duration(1500)}
-          exiting={SlideInDown.duration(1500)}
-          style={[styles.container, animatedStyle]}
-          on>
-          <Pressable
-            onPress={() => handleNavigateToSongPlayer(true)}
-            style={styles.maincontainer}>
-            <View style={styles.imageContainer}>
-              <Image
+    <GestureDetector gesture={gesture}>
+      <Animated.View
+        entering={SlideInDown.duration(1500)}
+        exiting={SlideInDown.duration(1500)}
+        style={[styles.container, animatedStyle]}
+        on>
+        <Pressable
+          onPress={() => handleNavigateToSongPlayer(true)}
+          style={styles.maincontainer}>
+          <View style={styles.imageContainer}>
+            {songProgressing.state === 'loading' ||
+            songProgressing.state === 'buffering' ? (
+              <View
                 style={{
                   width: '100%',
                   height: '100%',
-                  borderRadius: wp(1.5),
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}>
+                <ActivityIndicator size={'large'} color={color.textWhite} />
+              </View>
+            ) : (
+              <FastImage
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: wp(1),
                 }}
+                resizeMode={FastImage.resizeMode.contain}
                 source={
                   activeState
                     ? {uri: activeState?.artwork}
                     : require('../img/unknown_track.png')
                 }
               />
-            </View>
-            <View style={styles.textContainer}>
-              <TextTicker
-                style={styles.title}
-                duration={10000}
-                loop
-                bounce
-                repeatSpacer={50}
-                marqueeDelay={1000}>
-                {activeState?.title}
-              </TextTicker>
-              <TextTicker
-                style={styles.descriptions}
-                duration={10000}
-                loop
-                bounce
-                repeatSpacer={50}
-                marqueeDelay={1000}>
-                {activeState?.artist}
-              </TextTicker>
-            </View>
-            <Pressable style={styles.playContainer} onPress={handleTogglePlay}>
-              {songProgressing.state !== State.Playing ? (
-                <Play fill={color.textWhite} />
-              ) : (
-                <Pause stroke={color.textWhite} strokeWidth={1.5} />
-              )}
-            </Pressable>
+            )}
+          </View>
+          <View style={styles.textContainer}>
+            <TextTicker
+              style={styles.title}
+              duration={10000}
+              loop
+              bounce
+              repeatSpacer={50}
+              marqueeDelay={1000}>
+              {activeState?.title}
+            </TextTicker>
+            <TextTicker
+              style={styles.descriptions}
+              duration={10000}
+              loop
+              bounce
+              repeatSpacer={50}
+              marqueeDelay={1000}>
+              {activeState?.artist}
+            </TextTicker>
+          </View>
+          <Pressable style={styles.playContainer} onPress={handleTogglePlay}>
+            {songProgressing.state !== State.Playing ? (
+              <Play fill={color.textWhite} />
+            ) : (
+              <Pause stroke={color.textWhite} strokeWidth={1.5} />
+            )}
           </Pressable>
+        </Pressable>
+        <View
+          style={{
+            marginTop: wp(1),
+            height: wp(0.7),
+            borderRadius: wp(2),
+            width: '100%',
+            backgroundColor: color.textWhite,
+          }}>
           <View
             style={{
-              marginTop: wp(1),
-              height: wp(0.7),
+              height: '100%',
               borderRadius: wp(2),
-              width: '100%',
-              backgroundColor: color.textWhite,
-            }}>
-            <View
-              style={{
-                height: '100%',
-                borderRadius: wp(2),
-                width: isNaN(
-                  (progress.position / progress?.duration) *
-                    (wp(100) - responsiveui(0.05) - wp(2)),
-                )
-                  ? wp(0)
-                  : (progress.position / progress?.duration) *
-                    (wp(100) - responsiveui(0.05) - wp(2)),
-                backgroundColor: color.primary,
-              }}
-            />
-          </View>
-        </Animated.View>
-      </GestureDetector>
-    </>
+              width: isNaN(
+                (progress.position / progress?.duration) *
+                  (wp(100) - responsiveui(0.05) - wp(2)),
+              )
+                ? wp(0)
+                : (progress.position / progress?.duration) *
+                  (wp(100) - responsiveui(0.05) - wp(2)),
+              backgroundColor: color.primary,
+            }}
+          />
+        </View>
+      </Animated.View>
+    </GestureDetector>
   );
 };
 const styles = StyleSheet.create({
@@ -182,8 +195,8 @@ const styles = StyleSheet.create({
     width: wp(100) - responsiveui(0.05),
     left: (wp(100) - (wp(100) - responsiveui(0.05))) / 2,
     paddingHorizontal: wp(2),
-    backgroundColor: '#1E3E62',
-    height: wp(18),
+    backgroundColor: '#141E46',
+    height: wp(16.5),
     borderRadius: wp(1.5),
     position: 'absolute',
     justifyContent: 'flex-end',
@@ -196,8 +209,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   imageContainer: {
-    width: wp(15),
-    height: wp(15),
+    width: wp(13),
+    height: wp(13),
   },
   textContainer: {
     flex: 1,

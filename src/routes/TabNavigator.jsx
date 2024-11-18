@@ -18,7 +18,12 @@ const CustomTabBar = props => {
   const translateY = useSharedValue(0);
   const navigationState = useNavigationState(state => state);
   const animatedStyle = useAnimatedStyle(() => {
-    if (navigationState?.routes[1]?.state?.index === 1) {
+    console.log(navigationState?.routes[2]?.state?.index);
+
+    if (
+      navigationState?.routes[1]?.state?.index === 1 ||
+      navigationState?.routes[2]?.state?.index === 1
+    ) {
       translateY.value = 100;
     } else {
       translateY.value = 0;

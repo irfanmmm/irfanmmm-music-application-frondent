@@ -4,10 +4,14 @@ import TrackPlayer from 'react-native-track-player';
 export const useAddSongs = () => {
   const [addNewSongs, setAddNewSongs] = useState([]);
 
+  console.log(addNewSongs, 'qwertyuiopqwertyuio');
+  
   useEffect(() => {
-    TrackPlayer.reset().then(() => {
-      TrackPlayer.add(addNewSongs);
-    });
+    if (addNewSongs.length > 0) {
+      TrackPlayer.reset().then(() => {
+        TrackPlayer.add(addNewSongs);
+      });
+    }
   }, [addNewSongs]);
 
   return {setAddNewSongs};

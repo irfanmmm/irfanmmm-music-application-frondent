@@ -10,20 +10,19 @@ import {useNavigation} from '@react-navigation/native';
 import {ArrowLeft, Heart} from 'react-native-feather';
 import {color} from '../../styles/style';
 import {useQueue} from '../../trackplayer/useQueur';
-import {forwardRef, useImperativeHandle, useState} from 'react';
+import {forwardRef, useImperativeHandle} from 'react';
 import TrackPlayer, {
-  Event,
+  useActiveTrack,
   useIsPlaying,
-  useTrackPlayerEvents,
 } from 'react-native-track-player';
 
-export const PlayerHeadder = forwardRef(({value}, ref) => {
-  const [activeIndex, setActiveIndex] = useState(0);
+export const PlayerHeadder = forwardRef((_, ref) => {
   const thumbnailScale = useSharedValue(0);
   const navigation = useNavigation();
   const insets = useSafeArea();
   const {queelists} = useQueue();
   const playbackstate = useIsPlaying();
+  const currentTrack = useActiveTrack();
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
@@ -41,16 +40,11 @@ export const PlayerHeadder = forwardRef(({value}, ref) => {
 
   useImperativeHandle(ref, () => ({
     setScale: newScale => {
+      console.log(newScale);
+      
       thumbnailScale.value = newScale;
     },
   }));
-
-  useTrackPlayerEvents([Event.PlaybackTrackChanged], async () => {
-    const newTrackIndex = await TrackPlayer.getCurrentTrack();
-    if (newTrackIndex !== null && newTrackIndex !== activeIndex) {
-      setActiveIndex(newTrackIndex);
-    }
-  });
 
   const togglePlay = async () => {
     if (playbackstate.playing) {
@@ -85,13 +79,13 @@ export const PlayerHeadder = forwardRef(({value}, ref) => {
             numberOfLines={1}
             ellipsizeMode="tail"
             style={styles.headderTextTitle}>
-            {queelists[activeIndex]?.title}
+            {currentTrack?.title}
           </Text>
           <Text
             numberOfLines={1}
             ellipsizeMode="tail"
             style={styles.headderText}>
-            {queelists[activeIndex]?.artist}
+            {currentTrack?.artist}
           </Text>
         </View>
         <Pressable onPress={togglePlay}>
@@ -119,7 +113,7 @@ export const PlayerHeadder = forwardRef(({value}, ref) => {
           style={styles.headderTextTitle}
           numberOfLines={1}
           ellipsizeMode="tail">
-          {queelists[activeIndex]?.title || 'Unknown'}
+          {currentTrack?.title || 'Unknown'}
         </Text>
         <Pressable onPress={onLikActive}>
           <Heart
@@ -149,6 +143,7 @@ const styles = StyleSheet.create({
   },
   headderParent: {
     maxWidth: wp(70),
+    alignItems: 'flex-start',
   },
   headderTextTitle: {
     color: color.textWhite,

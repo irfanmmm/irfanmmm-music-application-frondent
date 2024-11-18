@@ -46,8 +46,8 @@ export const useApiCalls = () => {
       return {
         songs: response?.data?.map(detai => ({
           ...detai,
-          artwork: BASE_URL + detai?.artwork,
-          url: BASE_URL + detai?.url,
+          artwork: detai?.artwork,
+          url: detai?.url,
         })),
         pagination: response.pagination,
       };
@@ -83,8 +83,8 @@ export const useApiCalls = () => {
     if (response?.status) {
       return response?.data?.map(detai => ({
         ...detai,
-        artwork: BASE_URL + detai?.artwork,
-        url: BASE_URL + detai?.url,
+        artwork: detai?.artwork,
+        url: detai?.url,
       }));
     }
     return response;
@@ -97,8 +97,8 @@ export const useApiCalls = () => {
     if (response?.status) {
       return response?.data?.map(detai => ({
         ...detai,
-        artwork: BASE_URL + detai?.artwork,
-        url: BASE_URL + detai?.url,
+        artwork: detai?.artwork,
+        url: detai?.url,
       }));
     }
     return response;

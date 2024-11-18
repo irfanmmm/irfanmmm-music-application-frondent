@@ -13,7 +13,7 @@ export const useLogTrackPlayerState = () => {
 		}
 
 		if (event.type === Event.PlaybackActiveTrackChanged) {
-
+ 
 		}
 	})
 }

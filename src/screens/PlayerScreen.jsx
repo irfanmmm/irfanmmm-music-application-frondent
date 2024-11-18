@@ -5,116 +5,99 @@ import {
   TouchableOpacity,
   View,
   Text,
+  Dimensions,
+  Pressable,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {color} from '../styles/style';
 import {hp, responsiveui, wp} from '../styles/responsive';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {useAnimatedStyle, useSharedValue} from 'react-native-reanimated';
+import {
+  Extrapolation,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import Reanimated from 'react-native-reanimated';
-import {ChevronUp} from 'react-native-feather';
+import {ArrowLeft, ChevronUp, Heart} from 'react-native-feather';
 import {useQueue} from '../trackplayer/useQueur';
-import {TapGestureHandler} from 'react-native-gesture-handler';
+import {
+  Gesture,
+  GestureDetector,
+  TapGestureHandler,
+} from 'react-native-gesture-handler';
 import FastImage from 'react-native-fast-image';
 import {capitalizeFirstLetter} from '../config/capitalizeString';
 import LottieView from 'lottie-react-native';
 import {MusicCountroller} from '../components/MusicCountroller';
-import BottomSheet, {MAX_TRANSLATE_Y} from '../components/CustomBottomSheet';
-import BottomSheetUi from '../components/BottomSheetUi';
+import {MAX_TRANSLATE_Y} from '../components/CustomBottomSheet';
 import TrackPlayer, {
   Event,
-  RepeatMode,
   useIsPlaying,
   useTrackPlayerEvents,
 } from 'react-native-track-player';
-import {PlayerHeadder} from '../components/playerScreenComponent/PlayerScreenHedder';
-import {useRoute} from '@react-navigation/native';
+import {useIsFocused, useNavigation} from '@react-navigation/native';
+import {BottomSheetList} from '../components/BottomSheetList/BottomSheetList';
+import {PlayButton} from '../components/playButtons/PlayButtons';
+import {useSafeArea} from 'react-native-safe-area-context';
+import {useApiCalls} from '../hooks/useApiCalls';
 
+const {height: SCREEN_HEIGHT} = Dimensions.get('window');
 const PlayerScreen = () => {
-  const router = useRoute();
+  const {likesong, likedSongs} = useApiCalls();
   const [activeIndex, setActiveIndex] = useState(0);
-  const [repeateMode, setRepeatMode] = useState(false);
-  const playbackstate = useIsPlaying();
-  const ref = useRef(null);
+  const [like, setLike] = useState(false);
+  const insets = useSafeArea();
+  const navigation = useNavigation();
   const animateLike = useRef(null);
   const flatListRef = useRef(null);
   const isButtonPress = useRef(false);
-  const {suffleQueelist, setSuffleQueelist} = useQueue();
-  const [queelists, setQueelist] = useState(null);
-  const thumbnailScale = useSharedValue(1);
-
-  const playerHeaderRef = useRef(null);
+  const {queelists, setQueelist} = useQueue();
   const startTranslateY = -wp(15);
   const endTranslateY = wp(15);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    const adjustedTranslateY =
-      startTranslateY +
-      thumbnailScale.value * (endTranslateY - startTranslateY);
-
-    return {
-      transform: [
-        {
-          scale: thumbnailScale.value,
-        },
-        {
-          translateY: adjustedTranslateY,
-        },
-      ],
-    };
-  });
-  const calculateThumbnailScale = useCallback(
-    currentValue => {
-      const minSlideValue = MAX_TRANSLATE_Y;
-      const maxSlideValue = 0;
-
-      let normalizedValue =
-        (currentValue - minSlideValue) / (maxSlideValue - minSlideValue);
-      const minScale = 0.15;
-      const maxScale = 1;
-
-      return minScale + normalizedValue * (maxScale - minScale);
-    },
-    [MAX_TRANSLATE_Y],
-  );
-  const handleSlideToHeader = useCallback(currentValue => {
-    thumbnailScale.value = calculateThumbnailScale(currentValue);
-    if (playerHeaderRef && playerHeaderRef?.current) {
-      playerHeaderRef.current?.setScale(thumbnailScale.value);
-    }
-  }, []);
-
-  const onOpenBottomSheet = useCallback(() => {
-    const isActive = ref?.current?.isActive();
-    if (isActive) {
-      ref?.current?.scrollTo(0);
-    } else {
-      ref?.current?.scrollTo(hp(-97));
-    }
-  }, []);
+  const isFocused = useIsFocused();
+  const playbackstate = useIsPlaying();
 
   useEffect(() => {
-    const fetchQueue = async () => {
-      const songs = await TrackPlayer.getQueue();
-      console.log(songs);
-      
-      setQueelist(songs);
-      setActiveIndex(parseInt(router?.params?.propsIndex) || 0);
-    };
-    fetchQueue();
-  }, [router?.params]);
+    (async () => {
+      const likedMusics = await likedSongs();
+      const currentTrack = await TrackPlayer.getActiveTrack();
+      setLike(likedMusics.some(song => song?._id === currentTrack?._id));
+    })().catch(err => console.error('Error in useEffect:', err));
+  }, [activeIndex]);
 
   useTrackPlayerEvents([Event.PlaybackTrackChanged], async () => {
-    const newTrackIndex = await TrackPlayer.getCurrentTrack();
-    console.log(newTrackIndex, 'active track index-------');
+    if (!isFocused) {
+      const currentQuee = await TrackPlayer.getQueue();
+      setQueelist(currentQuee);
+    }
 
+    const newTrackIndex = await TrackPlayer.getCurrentTrack();
     if (newTrackIndex !== null && newTrackIndex !== activeIndex) {
-      setActiveIndex(newTrackIndex);
       isButtonPress.current = true;
-      flatListRef?.current?.scrollToIndex({
-        index: newTrackIndex,
-        animated: true,
-      });
+
+      let diffrence = newTrackIndex - activeIndex;
+
+      if (diffrence === 1 || diffrence === -1) {
+        flatListRef?.current?.scrollToIndex({
+          index: newTrackIndex,
+          animated: true,
+        });
+        setActiveIndex(newTrackIndex);
+      } else {
+        await TrackPlayer.move(newTrackIndex, 0);
+        const newQueelist = await TrackPlayer.getQueue();
+        setQueelist(newQueelist);
+        if (activeIndex !== 0) {
+          flatListRef?.current?.scrollToIndex({
+            index: 0,
+            animated: true,
+          });
+        }
+        setActiveIndex(0);
+      }
+      await TrackPlayer.play();
     }
   });
 
@@ -132,55 +115,127 @@ const PlayerScreen = () => {
     }
   }, []);
 
-  const shuffleQueue = async () => {
-    setSuffleQueelist(!suffleQueelist);
+  const onLikActive = async () => {
+    setLike(!like);
+    if (!like) {
+      animateLike.current?.play();
+    }
+    const newTrackIndex = await TrackPlayer.getActiveTrack();
+    await likesong(newTrackIndex?._id, !like);
   };
-  const handlePreviousPress = async () => {
-    await TrackPlayer.skipToPrevious();
-  };
-  const togglePlayBack = async () => {
+  const context = useSharedValue({y: 0});
+  const translateY = useSharedValue(0);
+
+  const maxtY = hp(-97);
+  const onOpenBottomSheet = useCallback(() => {
+    translateY.value = withSpring(maxtY, {
+      damping: 20,
+    });
+  }, []);
+
+  const gesture = Gesture.Pan()
+    .onStart(() => {
+      context.value = {y: translateY.value};
+    })
+    .onUpdate(event => {
+      const newTranslateY = event.translationY + context.value.y;
+      const currentValue = Math.min(
+        Math.max(newTranslateY, MAX_TRANSLATE_Y),
+        0,
+      );
+      translateY.value = currentValue;
+    })
+    .onEnd(() => {
+      if (translateY.value > -SCREEN_HEIGHT / 3) {
+        translateY.value = withSpring(0, {
+          damping: 20,
+        });
+      } else {
+        translateY.value = withSpring(MAX_TRANSLATE_Y, {
+          damping: 20,
+        });
+      }
+    });
+
+  const rBottomSheetStyle = useAnimatedStyle(() => {
+    const borderRadius = interpolate(
+      translateY.value,
+      [MAX_TRANSLATE_Y + 50, MAX_TRANSLATE_Y],
+      [25, 5],
+      Extrapolation.CLAMP,
+    );
+
+    return {
+      borderRadius,
+      transform: [
+        {
+          translateY: translateY.value,
+        },
+      ],
+    };
+  });
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const scale = interpolate(
+      translateY.value,
+      [0, MAX_TRANSLATE_Y],
+      [1, 0.15],
+      Extrapolation.IDENTITY,
+    );
+
+    const adjustedTranslateY = interpolate(
+      translateY.value,
+      [0, MAX_TRANSLATE_Y],
+      [endTranslateY, startTranslateY],
+      Extrapolation.IDENTITY,
+    );
+
+    return {
+      transform: [
+        {
+          scale: scale,
+        },
+        {
+          translateY: adjustedTranslateY,
+        },
+      ],
+    };
+  });
+
+  const togglePlay = async () => {
     if (playbackstate.playing) {
       await TrackPlayer.pause();
     } else {
       await TrackPlayer.play();
     }
   };
-  const handleNextPress = async () => {
-    await TrackPlayer.skipToNext();
-  };
-  const handleRepleate = async () => {
-    const currentRepeateMode = await TrackPlayer.getRepeatMode();
-    await TrackPlayer.setRepeatMode(
-      currentRepeateMode === 1 ? RepeatMode.Off : RepeatMode.Track,
+
+  const headderanimatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      translateY.value,
+      [0, MAX_TRANSLATE_Y],
+      [0, 1],
+      Extrapolation.CLAMP,
     );
-    setRepeatMode(currentRepeateMode === 1);
-  };
 
-  const handleeClick = index => {
-    switch (index) {
-      case 0:
-        shuffleQueue();
-        break;
-      case 1:
-        handlePreviousPress();
-        break;
-      case 2:
-        togglePlayBack();
-        break;
-      case 3:
-        handleNextPress();
-        break;
-      case 4:
-        handleRepleate();
-        break;
-      default:
-        break;
-    }
-  };
+    return {
+      opacity: opacity,
+      display: Math.round(opacity) === 0 ? 'none' : 'flex',
+    };
+  });
 
-  const onLikActive = () => {
-    animateLike.current?.play();
-  };
+  const headderanimatedStyle2 = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      translateY.value,
+      [0, MAX_TRANSLATE_Y],
+      [1, 0],
+      Extrapolation.CLAMP,
+    );
+    return {
+      opacity: opacity,
+      display: Math.round(opacity) === 0 ? 'none' : 'flex',
+    };
+  });
 
   if (!queelists)
     return (
@@ -198,7 +253,79 @@ const PlayerScreen = () => {
       }
       style={styles.container}>
       <View>
-        <PlayerHeadder ref={playerHeaderRef} value={1} />
+        {/* Headder Component */}
+
+        <View
+          style={{
+            flex: 1,
+          }}>
+          <Reanimated.View
+            style={[
+              styles.animatedContainer,
+              headderanimatedStyle,
+              {
+                marginTop: insets.top === 0 ? hp(5) : insets.top + hp(2),
+              },
+            ]}>
+            <View style={styles.headderParent}>
+              <Text
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={styles.headderTextTitle}>
+                {capitalizeFirstLetter(queelists[activeIndex]?.title)}
+              </Text>
+              <Text
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={styles.headderText}>
+                {queelists[activeIndex]?.artist || 'Unknown'}
+              </Text>
+            </View>
+            <Pressable onPress={togglePlay}>
+              <PlayButton />
+            </Pressable>
+          </Reanimated.View>
+
+          <Reanimated.View
+            style={[
+              styles.animatedContainer2,
+              headderanimatedStyle2,
+              {
+                marginTop: insets.top === 0 ? hp(5) : insets.top + hp(2),
+              },
+            ]}>
+            <Pressable onPress={() => navigation.goBack()}>
+              <ArrowLeft
+                stroke={color.textWhite}
+                width={wp(7)}
+                height={wp(7)}
+                strokeWidth={1.5}
+              />
+            </Pressable>
+            <Text
+              style={styles.headderTextTitle}
+              numberOfLines={1}
+              ellipsizeMode="tail">
+              {queelists[activeIndex]?.artist || 'Unknown'}
+            </Text>
+            <Pressable style={{position: 'relative'}} onPress={onLikActive}>
+              <Heart
+                stroke={like ? '#ff0000' : color.textWhite}
+                fill={like ? '#ff2d00' : 'transparent'}
+                width={wp(7)}
+                height={wp(7)}
+                strokeWidth={1.5}
+              />
+              <LottieView
+                ref={animateLike}
+                loop={false}
+                style={styles.lotieViewStyle}
+                source={require('./../img/animatedlike.json')}
+              />
+            </Pressable>
+          </Reanimated.View>
+        </View>
+
         <View style={styles.flatlistParentContainer}>
           {queelists && (
             <FlatList
@@ -210,17 +337,17 @@ const PlayerScreen = () => {
                 viewAreaCoveragePercentThreshold: 50,
               }}
               scrollEventThrottle={16}
-              keyExtractor={(item, index) => index.toString()}
+              keyExtractor={(_, index) => index.toString()}
               showsHorizontalScrollIndicator={false}
               data={queelists}
-              getItemLayout={(data, index) => ({
+              getItemLayout={(_, index) => ({
                 length: responsiveui(1),
                 offset: responsiveui(1) * index,
                 index,
               })}
               renderItem={({item, index}) => (
-                <View style={[styles.thumbnail_container]} key={index}>
-                  <TapGestureHandler numberOfTaps={2} onActivated={onLikActive}>
+                <TapGestureHandler numberOfTaps={2} onActivated={onLikActive}>
+                  <View style={[styles.thumbnail_container]} key={index}>
                     <Reanimated.View
                       style={[animatedStyle, styles.thumbnailParent]}>
                       <FastImage
@@ -236,42 +363,36 @@ const PlayerScreen = () => {
                         style={styles.thumnailimage}
                       />
                     </Reanimated.View>
-                  </TapGestureHandler>
+                    {/* 
+                    <LottieView
+                      ref={animateLike}
+                      loop={false}
+                      style={styles.lotieViewStyle}
+                      source={require('./../img/animatedlike.json')}
+                    /> */}
 
-                  <View style={styles.titlecontainer}>
-                    <Text
-                      style={styles.song_hedding}
-                      numberOfLines={1}
-                      ellipsizeMode="tail">
-                      {capitalizeFirstLetter(item?.title)}
-                    </Text>
-                    <Text
-                      style={styles.singer}
-                      numberOfLines={1}
-                      ellipsizeMode="tail">
-                      {item?.artist || 'Unknown'}
-                    </Text>
+                    <View style={styles.titlecontainer}>
+                      <Text
+                        style={styles.song_hedding}
+                        numberOfLines={1}
+                        ellipsizeMode="tail">
+                        {capitalizeFirstLetter(item?.title)}
+                      </Text>
+                      <Text
+                        style={styles.singer}
+                        numberOfLines={1}
+                        ellipsizeMode="tail">
+                        {item?.artist || 'Unknown'}
+                      </Text>
+                    </View>
                   </View>
-                </View>
+                </TapGestureHandler>
               )}
             />
           )}
         </View>
 
-        <LottieView
-          ref={animateLike}
-          loop={false}
-          style={styles.lotieViewStyle}
-          source={require('./../img/animatedlike.json')}
-        />
-
-        <MusicCountroller
-          currentIndex={activeIndex}
-          handleeClick={handleeClick}
-          songDetails={queelists}
-          repeateMode={repeateMode}
-          shuffleMode={suffleQueelist}
-        />
+        <MusicCountroller />
 
         <TouchableOpacity
           style={styles.bottm_container}
@@ -288,30 +409,13 @@ const PlayerScreen = () => {
           <Text style={styles.bottm_text}>RECENT SONGS</Text>
         </TouchableOpacity>
         <View style={styles.sheetContainer}>
-          <BottomSheet
-            ref={ref}
-            activeTrack={queelists[activeIndex]}
-            currentPosition={handleSlideToHeader}>
-            <FlatList
-              nestedScrollEnabled={true}
-              contentContainerStyle={{paddingBottom: 20}}
-              data={queelists}
-              keyExtractor={(item, index) => index.toString()}
-              renderItem={({item, index}) => (
-                <BottomSheetUi
-                  key={index}
-                  title={item?.title}
-                  img={item?.artwork}
-                  artist={item?.artist}
-                  index={index}
-                  activeIndex={activeIndex}
-                  onSelect={async () => {
-                    await TrackPlayer.skip(index);
-                  }}
-                />
-              )}
-            />
-          </BottomSheet>
+          {/* Bottom Sheet Container */}
+          <GestureDetector gesture={gesture}>
+            <Reanimated.View
+              style={[styles.bottomSheetContainer, rBottomSheetStyle]}>
+              <BottomSheetList queelists={queelists} />
+            </Reanimated.View>
+          </GestureDetector>
         </View>
       </View>
     </LinearGradient>
@@ -348,19 +452,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    width: '100%',
+    width: wp(100),
     position: 'absolute',
     top: 0,
     zIndex: 10,
   },
 
   headderParent: {
-    maxWidth: wp(70),
+    maxWidth: wp(65),
+    alignItems: 'flex-start',
+    justifyContent: 'flex-end',
   },
   headderTextTitle: {
     color: color.textWhite,
     fontFamily: 'Nunito-ExtraBold',
     fontSize: responsiveui(0.045),
+    overflow: 'hidden',
+    textAlign: 'center',
+    flex: 0.8,
   },
   headderText: {
     color: color.textdarckgrey,
@@ -379,7 +488,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: hp(2),
     position: 'relative',
-    zIndex: 1000,
+    zIndex: 1,
   },
 
   thumbnailParent: {
@@ -397,7 +506,7 @@ const styles = StyleSheet.create({
   thumnailimage: {
     width: '100%',
     height: '100%',
-    overflow: 'hidden',
+    // overflow: 'hidden',
     borderRadius: wp(2),
   },
 
@@ -420,11 +529,11 @@ const styles = StyleSheet.create({
 
   lotieViewStyle: {
     position: 'absolute',
-    zIndex: 10000,
-    left: wp(25),
-    top: hp(25),
-    height: wp(50),
-    width: wp(50),
+    zIndex: 10,
+    left: wp(-4),
+    top: wp(-4.2),
+    height: wp(15),
+    width: wp(15),
   },
 
   bottm_container: {
@@ -433,11 +542,11 @@ const styles = StyleSheet.create({
     marginTop: wp(5),
   },
 
-  bottm_text: {
-    color: color.textdarckgrey,
-    fontFamily: 'Nunito-Bold',
-    fontSize: wp(4.5),
-  },
+  // bottm_text: {
+  //   color: color.textdarckgrey,
+  //   fontFamily: 'Nunito-Bold',
+  //   fontSize: wp(4.5),
+  // },
 
   sheetContainer: {
     flex: 1,
@@ -448,6 +557,33 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: wp(100),
     zIndex: 10000,
+  },
+
+  // Bottom sheet style:
+
+  bottomSheetContainer: {
+    height: SCREEN_HEIGHT,
+    width: '100%',
+    position: 'absolute',
+    top: SCREEN_HEIGHT + hp(10),
+    paddingTop: wp(5),
+    borderRadius: 25,
+    overflow: 'hidden',
+    backgroundColor: color.background,
+  },
+  line: {
+    width: 75,
+    height: 4,
+    backgroundColor: 'grey',
+    alignSelf: 'center',
+    marginVertical: 15,
+    borderRadius: 2,
+  },
+  bottm_text: {
+    color: color.textWhite,
+    fontFamily: 'Nunito-Bold',
+    fontSize: wp(4.5),
+    textAlign: 'center',
   },
 });
 
