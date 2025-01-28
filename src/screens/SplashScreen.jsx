@@ -23,6 +23,7 @@ const InitiolScreen = ({navigation}) => {
             });
 
           const health = await checkHealth();
+          
 
           if (health.status) {
             navigation.navigate('Tabs');
@@ -36,14 +37,6 @@ const InitiolScreen = ({navigation}) => {
     });
   }, []);
   SplashScreen.hide();
-
-  const handleTrackPlayerLoaded = useCallback(() => {
-    SplashScreen.hide();
-  }, []);
-
-  useSetupTrackPlayer({
-    onLoad: handleTrackPlayerLoaded,
-  });
 
   useLogTrackPlayerState();
   return (

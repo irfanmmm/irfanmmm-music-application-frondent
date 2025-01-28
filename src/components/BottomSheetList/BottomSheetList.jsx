@@ -49,7 +49,7 @@ export const BottomSheetList = ({queelists}) => {
                   width: '100%',
                   height: '100%',
                   overflow: 'hidden',
-                  borderRadius: wp(2),
+                  borderRadius: wp(1),
                 }}
               />
             </View>
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   image: {
     width: responsiveui(0.15),
     height: responsiveui(0.15),
-    borderRadius: responsiveui(0.05),
+    borderRadius: responsiveui(0.01),
   },
   text_container: {
     width: wp(72),

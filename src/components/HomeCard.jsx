@@ -13,7 +13,7 @@ export const HomeCard = ({item, index, onPress}) => {
       <Pressable
         style={styles.recomonded_card_parent}
         onPress={() => {
-          onPress(item, index);
+          onPress(item);
         }}>
         <View style={styles.recomonded_card_image}>
           <FastImage

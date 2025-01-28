@@ -77,25 +77,29 @@ const PlayerScreen = () => {
     if (newTrackIndex !== null && newTrackIndex !== activeIndex) {
       isButtonPress.current = true;
 
-      let diffrence = newTrackIndex - activeIndex;
+      const difference = newTrackIndex - activeIndex;
 
-      if (diffrence === 1 || diffrence === -1) {
-        flatListRef?.current?.scrollToIndex({
-          index: newTrackIndex,
-          animated: true,
-        });
-        setActiveIndex(newTrackIndex);
-      } else {
+      if (difference > 1 || difference < -1) {
+        //move to index 0
         await TrackPlayer.move(newTrackIndex, 0);
         const newQueelist = await TrackPlayer.getQueue();
         setQueelist(newQueelist);
+        const currentIndex = await TrackPlayer.getCurrentTrack();
         if (activeIndex !== 0) {
           flatListRef?.current?.scrollToIndex({
             index: 0,
             animated: true,
           });
         }
+
         setActiveIndex(0);
+      } else {
+        // its ok for the scroll
+        flatListRef?.current?.scrollToIndex({
+          index: newTrackIndex,
+          animated: true,
+        });
+        setActiveIndex(newTrackIndex);
       }
       await TrackPlayer.play();
     }
@@ -146,7 +150,7 @@ const PlayerScreen = () => {
       translateY.value = currentValue;
     })
     .onEnd(() => {
-      if (translateY.value > -SCREEN_HEIGHT / 3) {
+      if (translateY.value > -SCREEN_HEIGHT / 1.2) {
         translateY.value = withSpring(0, {
           damping: 20,
         });
@@ -488,7 +492,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: hp(2),
     position: 'relative',
-    zIndex: 1,
+    zIndex: 11,
   },
 
   thumbnailParent: {

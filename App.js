@@ -4,7 +4,7 @@ import store from './src/config/redux/store';
 import StackNavigator from './src/routes/StackNavigator';
 import PushNotification from 'react-native-push-notification';
 import messaging from '@react-native-firebase/messaging';
-import { useSetupTrackPlayer } from './src/trackplayer/useSetupTrackPlayer';
+import {useSetupTrackPlayer} from './src/trackplayer/useSetupTrackPlayer';
 
 const App = () => {
   useSetupTrackPlayer({
@@ -12,24 +12,6 @@ const App = () => {
   });
   // App.js or index.js
   useEffect(() => {
-    // Background message handler
-    // const backgroundMessageHandler = messaging().setBackgroundMessageHandler(
-    //   async remoteMessage => {
-    //     console.log('Message handled in the background!', remoteMessage);
-    //   },
-    // );
-
-    // Create a notification channel (Android)
-    // PushNotification.createChannel(
-    //   {
-    //     channelId: 'default-channel-id',
-    //     channelName: 'Default Channel',
-    //     channelDescription: 'A default channel',
-    //     // soundName: 'default',
-    //   },
-    //   created => console.log(`createChannel returned '${created}'`),
-    // );
-
     const unsubscribe = messaging().onMessage(async remoteMessage => {
       console.log('A new FCM message arrived!', remoteMessage);
 

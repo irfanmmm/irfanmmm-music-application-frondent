@@ -16,22 +16,26 @@ import {HomeHoriZontalCard} from '../components/HomeHoriZontalCard';
 import {useApiCalls} from '../hooks/useApiCalls';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import {MinimisedContainer} from '../components/MinimisedContainer';
-import TrackPlayer, {usePlaybackState} from 'react-native-track-player';
+import TrackPlayer, {
+  useActiveTrack,
+  usePlaybackState,
+} from 'react-native-track-player';
 import {useAddSongs} from '../hooks/useAudio';
 import {Hedder} from '../components/homeComponent/HomeHeadder';
 import {SearchContainer} from '../components/homeComponent/HomeSearchContainer';
 import {EmptyList} from '../components/homeComponent/ListEmptyComponent';
+import {useSelectTrack} from '../hooks/useSelectTrack';
 
 const Home = () => {
   const {loading, getAllsongs, recentsongs} = useApiCalls();
   const {setAddNewSongs} = useAddSongs();
+  const selectTrack = useSelectTrack();
   const scrollY = new Animated.Value(0);
   const [songsDetails, setSongDetails] = useState(null);
   const [searchSongsDetails, setSearchSongDetails] = useState(null);
   const [activeInput, setActiveInput] = useState(false);
   const [rececntSongs, setRececntSongs] = useState([]);
   const [currentPaginationStatus, setCurrentPaginationStatus] = useState(null);
-  const songProgressing = usePlaybackState();
 
   useEffect(() => {
     (async () => {
@@ -47,8 +51,8 @@ const Home = () => {
 
       const previuseQuee = await TrackPlayer.getQueue();
 
-      console.log(previuseQuee);
-      
+      // console.log(previuseQuee);
+
       if (previuseQuee.length > 0) return;
       setAddNewSongs(songs?.slice(0, 8));
     })();
@@ -62,54 +66,6 @@ const Home = () => {
       BackHandler.removeEventListener('hardwareBackPress');
     };
   }, []);
-
-  const handleeClick = async (song, _) => {
-    if (
-      songProgressing.state === 'loading' ||
-      songProgressing.state === 'buffering'
-    )
-      return;
-
-    try {
-      const queelist = await TrackPlayer.getQueue();
-      if (queelist.find(quee => quee.url === song.url)) {
-        let newindex = queelist.findIndex(track => track.url === song.url);
-        await TrackPlayer.move(newindex, 0);
-
-        if (newindex === -1) return;
-
-        await TrackPlayer.skip(0);
-        await TrackPlayer.play();
-      } else {
-        await TrackPlayer.reset();
-        let newAddSongList = [song, ...queelist];
-        newAddSongList = Array.from(
-          new Map(newAddSongList.map(item => [item?._id, item])).values(),
-        );
-        await TrackPlayer.add(newAddSongList);
-        let newQueelist = await TrackPlayer.getQueue();
-        let newindex = newQueelist.findIndex(track => track.url === song.url);
-        if (newindex === -1) return;
-        await TrackPlayer.skip(newindex);
-        await TrackPlayer.play();
-
-        if (newAddSongList?.length > 8) {
-          const removableIndexes = newAddSongList.slice(
-            8,
-            newAddSongList.length,
-          );
-          await TrackPlayer.remove(
-            Array.from(
-              {length: removableIndexes.length - 8},
-              (_, index) => removableIndexes.length - index,
-            ),
-          );
-        }
-      }
-    } catch (error) {
-      console.log('song not existed in quee list', error);
-    }
-  };
 
   const handleeClickSearchIcon = () => {
     setActiveInput(true);
@@ -214,16 +170,25 @@ const Home = () => {
           flex: 1,
         }}
         ListFooterComponentStyle={{
-          height: loading && songsDetails ? hp(10) : hp(2),
+          height:
+            (loading && searchSongsDetails && searchSongsDetails?.length > 0) ||
+            (songsDetails && songsDetails?.length > 0)
+              ? hp(10)
+              : hp(2),
         }}
         ListFooterComponent={() =>
-          loading && songsDetails ? (
+          loading &&
+          songsDetails &&
+          songsDetails?.length > 0 &&
+          (!searchSongsDetails || searchSongsDetails?.length === 0) ? (
             <ActivityIndicator size={'large'} color={color.textWhite} />
           ) : null
         }
-        ListEmptyComponent={() => (!loading ? <EmptyList /> : null)}
+        ListEmptyComponent={() =>
+          !loading || searchSongsDetails ? <EmptyList /> : null
+        }
         renderItem={({index, item}) => (
-          <HomeCard onPress={handleeClick} index={index} item={item} />
+          <HomeCard onPress={selectTrack} index={index} item={item} />
         )}
         onEndReached={handleEndReached}
       />

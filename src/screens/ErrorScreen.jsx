@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: color.textWhite,
-    fontSize: wp(6),
+    fontSize: wp(4),
     textAlign: 'center',
     fontFamily: 'Nunito-Regular',
   },
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     marginTop: wp(5),
   },
   btnText: {
-    fontSize: wp(5),
+    fontSize: wp(4),
     color: color.background,
     fontFamily: 'Nunito-Bold',
   },

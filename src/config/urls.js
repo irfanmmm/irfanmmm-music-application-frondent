@@ -1,5 +1,5 @@
-export const URL_WEBSOCKET = 'ws://192.168.242.179:3000';
-export const BASE_URL = 'http://192.168.242.179:3000';
+export const URL_WEBSOCKET = 'ws://music-app-backend-1.onrender.com';
+export const BASE_URL = 'https://music-app-backend-1.onrender.com';
 
 export const API_CRIDENTIOLS = {
   HEALTH: BASE_URL + '/health',

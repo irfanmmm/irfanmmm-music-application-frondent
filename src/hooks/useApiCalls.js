@@ -12,6 +12,14 @@ export const useApiCalls = () => {
   };
 
   const signup = async (email, name, photo, token) => {
+
+    console.log(API_CRIDENTIOLS.LOGIN , {
+      email: email,
+      profile: photo,
+      username: name,
+      notificationid: token,
+    });
+    
     const response = await fetchData({
       url: API_CRIDENTIOLS.LOGIN,
       method: 'POST',

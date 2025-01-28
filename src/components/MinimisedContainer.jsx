@@ -31,8 +31,11 @@ export const MinimisedContainer = () => {
   const navigation = useNavigation();
   const animatedvalue = useSharedValue(-5);
   const songProgressing = usePlaybackState();
-  const activeState = useActiveTrack();
+  const activeState = useActiveTrack()
   const progress = useProgress();
+
+  // console.log(activeState);
+  
 
   useEffect(() => {
     animatedvalue.value = -5;
@@ -175,11 +178,12 @@ export const MinimisedContainer = () => {
               borderRadius: wp(2),
               width: isNaN(
                 (progress.position / progress?.duration) *
-                  (wp(100) - responsiveui(0.05) - wp(2)),
+                (wp(100) - responsiveui(0.05) - wp(2))
               )
-                ? wp(0)
-                : (progress.position / progress?.duration) *
-                  (wp(100) - responsiveui(0.05) - wp(2)),
+              ? wp(0)
+              : (progress.position / progress?.duration) *
+                (wp(100) - responsiveui(0.05) - wp(2)),
+              
               backgroundColor: color.primary,
             }}
           />
@@ -199,6 +203,7 @@ const styles = StyleSheet.create({
     height: wp(16.5),
     borderRadius: wp(1.5),
     position: 'absolute',
+    zIndex:50,
     justifyContent: 'flex-end',
     bottom: hp(10),
   },

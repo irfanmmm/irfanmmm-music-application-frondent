@@ -21,14 +21,16 @@ import Animated, {
 import {shallowEqual, useDispatch, useSelector} from 'react-redux';
 import {useApiCalls} from '../hooks/useApiCalls';
 import {MinimisedContainer} from '../components/MinimisedContainer';
-import TrackPlayer from 'react-native-track-player';
+import TrackPlayer, {useActiveTrack} from 'react-native-track-player';
 import {ArrowLeft} from 'react-native-feather';
 import FastImage from 'react-native-fast-image';
 import {useIsFocused} from '@react-navigation/native';
+import {useSelectTrack} from '../hooks/useSelectTrack';
 
 const Favorate = ({navigation}) => {
   const insets = useSafeArea();
   const isFocused = useIsFocused();
+  const selectTrack = useSelectTrack();
 
   const {loading, getAllsongs, likedSongs} = useApiCalls();
   const {profileDetails} = useSelector(
@@ -54,30 +56,15 @@ const Favorate = ({navigation}) => {
     })();
   }, [isFocused]);
 
-  const handleNavigate = async (_, index) => {
-    try {
-      await TrackPlayer.skip(index);
-      await TrackPlayer.play();
-    } catch (error) {
-      console.log(error);
-    }
-  };
 
-  
-  const MinimisedSheet = useMemo(() => {
-    return <MinimisedContainer />;
-  }, []);
-  
+
   if (loading)
     return (
       <View style={styles.loadingcontainer}>
         <ActivityIndicator size={'large'} color={color.textWhite} />
-        {MinimisedSheet}
+        <MinimisedContainer />
       </View>
     );
-
-  
-
 
   return (
     <View
@@ -131,51 +118,59 @@ const Favorate = ({navigation}) => {
             }}
             numColumns={3}
             data={favorateList?.length > 0 ? favorateList : allsongs}
-            renderItem={({item, index}) => (
-              <Pressable
-                style={[
-                  {
-                    marginRight: wp(2.5),
-                    marginTop: wp(2.5),
-                    marginBottom:
-                      favorateList?.length > 0 &&
-                      favorateList.length - 1 === index &&
-                      favorateList?.length < !10
-                        ? hp(20)
-                        : allsongs.length - 1 === index &&
-                          favorateList?.length < !10
-                        ? hp(20)
-                        : 0,
-                  },
-                ]}
-                onPress={() => handleNavigate(item, index)}>
-                <Animated.Image
-                  entering={FadeInDown.delay(200 * index)}
-                  resizeMode="cover"
-                  style={[styles.favorate_song_thumbnail]}
-                  onLoadEnd={() => {
-                    setImageLoading(false);
-                  }}
-                  source={
-                    item?.artwork
-                      ? {uri: item?.artwork}
-                      : require('../img/unknown_track.png')
-                  }
-                />
-
-                {imageLoading && (
-                  <FastImage
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      borderRadius: wp(1),
+            renderItem={({item, index}) => {
+              return (
+                <Pressable
+                  style={[
+                    {
+                      marginRight: wp(2.5),
+                      marginTop: wp(2.5),
+                      marginBottom:
+                        favorateList.length > 0 &&
+                        favorateList.length - 1 === index
+                          ? hp(20)
+                          : allsongs.length - 1 === index
+                          ? hp(20)
+                          : 0,
+                      // favorateList?.length > 0 &&
+                      // favorateList.length - 1 === index &&
+                      // favorateList?.length < !10
+                      //   ? hp(20)
+                      //   : allsongs.length - 1 === index &&
+                      //     allsongs?.length < !10
+                      //   ? hp(20)
+                      //   : 0,
+                    },
+                  ]}
+                  onPress={() => selectTrack(item)}>
+                  <Animated.Image
+                    entering={FadeInDown.delay(200 * index)}
+                    resizeMode="cover"
+                    style={[styles.favorate_song_thumbnail]}
+                    onLoadEnd={() => {
+                      setImageLoading(false);
                     }}
-                    resizeMode={FastImage.resizeMode.contain}
-                    source={require('../img/unknown_track.png')}
+                    source={
+                      item?.artwork
+                        ? {uri: item?.artwork}
+                        : require('../img/unknown_track.png')
+                    }
                   />
-                )}
-              </Pressable>
-            )}
+
+                  {imageLoading && (
+                    <FastImage
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: wp(1),
+                      }}
+                      resizeMode={FastImage.resizeMode.contain}
+                      source={require('../img/unknown_track.png')}
+                    />
+                  )}
+                </Pressable>
+              );
+            }}
           />
 
           {favorateList?.length < 10 && (
@@ -200,7 +195,7 @@ const Favorate = ({navigation}) => {
                           allsongs?.length - 1 === index ? hp(20) : 0,
                       },
                     ]}
-                    onPress={() => handleNavigate(item, index)}>
+                    onPress={() => selectTrack(item)}>
                     <Animated.Image
                       entering={FadeInDown.delay(200 * index)}
                       resizeMode="cover"
@@ -218,7 +213,7 @@ const Favorate = ({navigation}) => {
           )}
         </Animated.View>
       </ScrollView>
-      {MinimisedSheet}
+      <MinimisedContainer />
     </View>
   );
 };

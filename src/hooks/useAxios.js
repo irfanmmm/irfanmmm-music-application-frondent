@@ -47,6 +47,7 @@ const useAxios = initialConfig => {
         // timeout: 5000,
         // cancelToken: cancelToken.current.token,
       });
+      console.log(response.data, 'dfghjkl');
 
       setData(response.data);
     } catch (err) {
